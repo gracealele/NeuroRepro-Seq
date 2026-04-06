@@ -1,0 +1,21 @@
+# Requirements 
+# English to German & French Medical QA Dataset Translator
+
+# Install all dependencies with:  pip install -r requirements.txt
+
+
+# --- Core Data Handling ---
+pandas>=2.0.0               # DataFrame loading, manipulation, and Excel I/O
+openpyxl>=3.1.0             # Required by pandas for reading/writing .xlsx files
+
+
+# --- Translation ---
+deep-translator>=1.11.4     # Free Google Translate backend (no API key needed)
+deepl>=1.18.0               # Optional: DeepL API backend (higher quality), requires DEEPL_API_KEY environment variable
+
+
+# --- Standard Library (no install needed) ---
+# re          - built-in: regex for placeholder/protect patterns
+# os          - built-in: reading DEEPL_API_KEY from environment
+# logging     - built-in: pipeline logging
+# time        - built-in: retry back-off and rate limiting

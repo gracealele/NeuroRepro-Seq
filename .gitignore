@@ -1,0 +1,40 @@
+# ============================================================
+# .gitignore — Translation Pipeline Project
+# ============================================================
+
+
+# --- Sensitive ---
+.env
+*.key
+*.pem
+
+
+# --- Python Cache ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+
+# --- Output / Generated Files ---
+dataset_de.xlsx
+dataset_fr.xlsx
+translation_report.xlsx
+
+
+# --- Virtual Environments ---
+.env/
+venv/
+env/
+.venv/
+
+
+# --- IDE ---
+.vscode/
+.idea/
+*.egg-info/
+
+
+# --- OS Clutter ---
+.DS_Store
+Thumbs.db

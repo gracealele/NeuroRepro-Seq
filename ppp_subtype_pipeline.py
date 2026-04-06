@@ -261,14 +261,14 @@ def generate_synthetic(cfg: PipelineConfig) -> tuple[pd.DataFrame, pd.Series]:
 # PREPROCESSING (HDLSS + low-resource aware)
 # ===================================================================
 
-def  filter_low_expression(expr: pd.DataFrame, min_count: int, min_frac: float) -> pd.DataFrame:
+def filter_low_expression(expr: pd.DataFrame, min_count: int, min_frac: float) -> pd.DataFrame:
     """ Remove genes not expressed above threshold in at least min_frac of samples."""
     
     n_sample = expr.shape[1]
     mask = (expr >= min_count).sum(axis=1) >= int(min_frac * n_sample)
     filtered = expr.loc[mask]
     logging.info(f"Expression filter: {expr.shape[0]} to {filtered.shape[0]} genes")
-    return expr, filtered
+    return filtered
 def tmm_normalise(expr: pd.DataFrame) -> pd.DataFrame:
     """
     Lightweight TMM-inspired normalisation for low-coverage RNA-seq. Scales each sample 
@@ -294,7 +294,8 @@ def tmm_normalise(expr: pd.DataFrame) -> pd.DataFrame:
     cpm = normalised.div(normalised.sum(axis=0), axis=1) * 1e6
     return np.log2(cpm +1)
         
-def mad_variance_filter(expr: pd.DataFrame, top-n: int, ppp_genes: list, weight:float) -> pd.DataFrame:
+
+def mad_variance_filter(expr: pd.DataFrame, top_n: int, ppp_genes: list, weight: float) -> pd.DataFrame:
     """
     Select top-n genes by Median Absolute Deviation (MAD).
     MAD is robust to outliers samples, this is critical in small-n HDLSS settings.        
@@ -306,12 +307,13 @@ def mad_variance_filter(expr: pd.DataFrame, top-n: int, ppp_genes: list, weight:
     bonus = pd.Series(0.0, index=mad.index)        
     for g in ppp_genes:        
         if g in bonus.index:        
-            bonus[g] = mad.max() * (weight  - 1)        
+            bonus[g] = mad.max() * (weight - 1)        
     scored = mad + bonus        
     top_genes = scored.nlargest(top_n).index        
-    logging.info(f"MAD filter to {len(top_genes)} genes selected " f"({sum(g in ppp_genes for g in top_genes)} PPP signature genes)")        
+    logging.info(f"MAD filter to {len(top_genes)} genes selected ({sum(g in ppp_genes for g in top_genes)} PPP signature genes)")        
     return expr.loc[top_genes]
-                
+              
+
 def preprocess(expr_raw: pd.DataFrame, cfg:PipelineConfig) -> pd.DataFrame:        
     expr = filter_low_expression(expr_raw, cfg.min_samples_expressed)        
     logging.info("Applying TMM normalization ...")        
@@ -324,6 +326,60 @@ def preprocess(expr_raw: pd.DataFrame, cfg:PipelineConfig) -> pd.DataFrame:
 # =================================================================== 
 # HDLSS-Aware DIMENTIONALITY REDUCTION
 # ===================================================================
+
+def hdlss_reduce(expr: pd.DataFrame, cfg: PipelineConfig) -> np.array:
+    """
+    HDLSS-safe dimentionality reduction pipeline:
+
+    Step 1: Ledoit-wolf shrinkage on thr covariance matrix.
+            In p >> n settings, the sample covariance is ill-conditioned.
+            Ledoit-wolf provides a well-conditioned regularised estimate.
+
+    Step 2: Sparse PCA (or standard PCA in low-resource mode).
+            Sparse PCA finds components with few non-zero loadings.
+            improving interpretability and reducing overfitting in HDLSS.
+
+    Step 3: Z-score standardise the resulting embedding.
+    """
+    X = expr.T.values.astype(float)
+    n, p = X.shape
+    logging.info(f"HDLSS reduction: {n} samples * {p} genes(p/n ratio = {p/n:.0f})")
+
+    # Step 1: Ledoit-wolf shrinkage (regularises covariance for p >> n)
+    if cfg.ledoit_wolf_shrinkage and n < p:
+        logging.info("Applying Ledoit-wolf covariance shrinkage ...")
+        lw = LedoitWolf(assume_centered=False)
+        lw.fit(X)
+        shrinkage = lw.shrinkage_
+        logging.info(f"Ledoit-Wolf shrinkage coefficent: {shrinkage: .4f}")
+
+        # Project onto PCA space first (safe pre-step for Sparse PCA)
+        n_pre = min(n - 1, 50)
+        pca_pre = PCA(n_components=n_pre, random_state=cfg.random_seed)
+        X = pca_pre.fit_transform(X)
+        logging.info(f"Pre_PCA: {n_pre} components, {pca_pre.explained_variance_ratio_.sum():.1%} variance")
+
+    # Step 2: Sparse PCA for interpretable regularised components
+    n_comp = min(cfg.n_components, X.shape[1] -1, n-1)
+    
+    if cfg.method == "sparse_pca" and not cfg.low_resource_mode:
+        logging.info(f"Sparse PCA to {n_comp} components ...")
+        
+        # alpha controls sparsity; higher = more zero loadings
+        spca = SparsePCA(n_components=n_comp, alpha=1.0, 
+                         random_state=cfg.random_seed, n_jobs=cfg.n_jobs,
+                         max_iter=200)
+        coords = spca.fit_transform(X)
+    else:
+        # Low-resource fallback to standard PCA (fast, minimal RAM)
+        logging.info(f"Standard PCA to {n_comp} components (low-resource mode) ...")
+        pca = PCA(n_components=n_comp, random_state=cfg.random_seed)
+        coords = pca.fit_transform(X)
+    
+    # Z-score standardize the embedding
+    scaler = StandardScaler()
+    coords = scaler.fit_transform(coords)
+    return coords
 
 """
 Pipeline:
