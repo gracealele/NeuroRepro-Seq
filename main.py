@@ -1,72 +1,4 @@
 
-# =============================================================================
-# MAIN PIPELINE
-# =============================================================================
-"""
-======================================================================
-HDLSS-Aware Transcriptomic Subtype Discovery for Postpartum Pychosis (PPP)
-======================================================================
-
-Design Goals
-------------
-1.  HDLSS-Aware       - Built for n << p (few sample, may genes).
-                        Uses Ledoit-Wolf shrinkage, Sparse PCA, bootstrap
-                        Stability filtering instead of naive PCA and K-means.
-
-2.  Computationally   - Profiled runtime and RAM at every stage; a "low-resorce
-    efficient           mode" caps memory and parallelism so the pipeline runs
-                        on a standard laptop (<8GB RAM, no GPU)
-
-3.  Small Sample      - Consensus clustering with bootstrap confidence intervals;
-    Size                stability threshold rejects unreliable cluster solutions.
-    
-4.  Low-resource      - TMM-like normalization for sparse/low-coverage counts;
-    sequencing          MAD-based variance filter robust to outlier samples.    
-    
-5.  PPP-Informed      - Literature-grounded gene sets (HPA axis, neuroinflamation
-                        dopaminergic) upweighted in feature selection.
-
-6.  Reproducible      - JSON config, structured logging, version-stamped outputs.
-
-Usage
------
-    python ppp_pipeline.py                          # synthetic data
-    python ppp_pipeline.py --config config.json     # custom config
-    python ppp_pipeline.py --geo GSE152795          # real GEO data
-    
-Requirements (Standard)
-    pip install pandas numpy scikit-learn scipy matplotlib seaborn
-    
-Requirements (Optional (recommended))
-    pip install GEOparse umap-learn
-    
-GEO datasets relevant to PPP/ Perinatal psychosis:
-    GSE152795   - postpatum mood/psychosis transcriptomics
-    GSE116137   - bipolar disorder (first-episode) - closely related
-    GSE181797   - peripheral blood in perinatal psychiatric disorders
-"""
-
-
-"""
-ppp_subtypes/main.py
-====================
-Pipeline runner and CLI entry point for the PPP Subtype Pipeline.
-
-Usage
------
-    # Run with synthetic data (default)
-    python -m ppp_subtypes.main
-    
-    # Run with a custom config file
-    python -m ppp_subtypes.main --config config.json
-    
-    # Run with real GEO data
-    python -m ppp_subtypes.main --geo GSE152795
-    
-    # Combine: config + GEO override
-    python -m ppp_subtypes.main --config config.json --geo GSE152795
-"""
- 
 from __future__ import annotations
 
 import argparse
@@ -422,3 +354,74 @@ if __name__ == "__main__":
         cfg.k_range = list(range(2, args.k_max + 1))
 
     run(cfg)
+
+
+
+# =============================================================================
+# MAIN PIPELINE
+# =============================================================================
+"""
+======================================================================
+HDLSS-Aware Transcriptomic Subtype Discovery for Postpartum Pychosis (PPP)
+======================================================================
+
+Design Goals
+------------
+1.  HDLSS-Aware       - Built for n << p (few sample, may genes).
+                        Uses Ledoit-Wolf shrinkage, Sparse PCA, bootstrap
+                        Stability filtering instead of naive PCA and K-means.
+
+2.  Computationally   - Profiled runtime and RAM at every stage; a "low-resorce
+    efficient           mode" caps memory and parallelism so the pipeline runs
+                        on a standard laptop (<8GB RAM, no GPU)
+
+3.  Small Sample      - Consensus clustering with bootstrap confidence intervals;
+    Size                stability threshold rejects unreliable cluster solutions.
+    
+4.  Low-resource      - TMM-like normalization for sparse/low-coverage counts;
+    sequencing          MAD-based variance filter robust to outlier samples.    
+    
+5.  PPP-Informed      - Literature-grounded gene sets (HPA axis, neuroinflamation
+                        dopaminergic) upweighted in feature selection.
+
+6.  Reproducible      - JSON config, structured logging, version-stamped outputs.
+
+Usage
+-----
+    python ppp_pipeline.py                          # synthetic data
+    python ppp_pipeline.py --config config.json     # custom config
+    python ppp_pipeline.py --geo GSE152795          # real GEO data
+    
+Requirements (Standard)
+    pip install pandas numpy scikit-learn scipy matplotlib seaborn
+    
+Requirements (Optional (recommended))
+    pip install GEOparse umap-learn
+    
+GEO datasets relevant to PPP/ Perinatal psychosis:
+    GSE152795   - postpatum mood/psychosis transcriptomics
+    GSE116137   - bipolar disorder (first-episode) - closely related
+    GSE181797   - peripheral blood in perinatal psychiatric disorders
+"""
+
+
+"""
+ppp_subtypes/main.py
+====================
+Pipeline runner and CLI entry point for the PPP Subtype Pipeline.
+
+Usage
+-----
+    # Run with synthetic data (default)
+    python -m ppp_subtypes.main
+    
+    # Run with a custom config file
+    python -m ppp_subtypes.main --config config.json
+    
+    # Run with real GEO data
+    python -m ppp_subtypes.main --geo GSE152795
+    
+    # Combine: config + GEO override
+    python -m ppp_subtypes.main --config config.json --geo GSE152795
+"""
+ 
