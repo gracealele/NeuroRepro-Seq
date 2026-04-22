@@ -1,39 +1,4 @@
 
-Copy
-
-"""
-ppp_subtypes/modules/clustering.py
-====================================
-Consensus clustering with bootstrap stability validation.
- 
-Three public functions:
-    consensus_cluster  – build consensus matrices for k in k_range
-    select_optimal_k   – choose best k via AUC, silhouette, stability
-    assign_subtypes    – final label assignment for the chosen k
- 
-Why consensus clustering?
---------------------------
-Standard k-means is sensitive to initialisation and unstable for small n.
-Consensus clustering runs k-means many times on random subsamples and
-aggregates co-cluster frequencies into a consensus matrix that is stable
-even for n=15–30 samples.
- 
-Why bootstrap stability?
--------------------------
-In HDLSS settings, a cluster solution may look good on the training data
-but fall apart under perturbation.  Bootstrap stability (Jaccard) measures
-how consistently each cluster reappears across bootstrap replicates.
-A k is rejected if its mean Jaccard falls below cfg.stability_threshold.
- 
-Usage
------
-    from ppp_subtypes.modules.clustering import (
-        consensus_cluster, select_optimal_k, assign_subtypes
-    )
-    matrices  = consensus_cluster(coords, cfg)
-    optimal_k, metrics = select_optimal_k(matrices, coords, cfg)
-    subtypes  = assign_subtypes(coords, optimal_k, expr.columns)
-"""
  
 from __future__ import annotations
  
@@ -50,10 +15,8 @@ from sklearn.utils import resample
 from modules.config import PipelineConfig
  
  
-# =============================================================================
 # HELPERS
 # =============================================================================
-
 
 def _kmeans(coords: np.ndarray, k: int, seed: int) -> np.ndarray:
     """Single k-means run.  Returns label array."""
@@ -338,3 +301,46 @@ def assign_subtypes(
     labels  = _kmeans(coords, k, seed=42)
     named   = [f"Subtype_{chr(65 + l)}" for l in labels]
     return pd.Series(named, index=sample_ids, name="predicted_subtype")
+
+
+
+
+
+
+
+
+Copy
+
+"""
+ppp_subtypes/modules/clustering.py
+====================================
+Consensus clustering with bootstrap stability validation.
+ 
+Three public functions:
+    consensus_cluster  – build consensus matrices for k in k_range
+    select_optimal_k   – choose best k via AUC, silhouette, stability
+    assign_subtypes    – final label assignment for the chosen k
+ 
+Why consensus clustering?
+--------------------------
+Standard k-means is sensitive to initialisation and unstable for small n.
+Consensus clustering runs k-means many times on random subsamples and
+aggregates co-cluster frequencies into a consensus matrix that is stable
+even for n=15–30 samples.
+ 
+Why bootstrap stability?
+-------------------------
+In HDLSS settings, a cluster solution may look good on the training data
+but fall apart under perturbation.  Bootstrap stability (Jaccard) measures
+how consistently each cluster reappears across bootstrap replicates.
+A k is rejected if its mean Jaccard falls below cfg.stability_threshold.
+ 
+Usage
+-----
+    from ppp_subtypes.modules.clustering import (
+        consensus_cluster, select_optimal_k, assign_subtypes
+    )
+    matrices  = consensus_cluster(coords, cfg)
+    optimal_k, metrics = select_optimal_k(matrices, coords, cfg)
+    subtypes  = assign_subtypes(coords, optimal_k, expr.columns)
+"""

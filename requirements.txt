@@ -1,0 +1,26 @@
+# =============================================================================
+# ppp_subtypes – Requirements
+# =============================================================================
+# Install core dependencies:
+#     pip install -r requirements.txt
+#
+# Install optional dependencies (recommended):
+#     pip install -r requirements.txt -r requirements-optional.txt
+# =============================================================================
+
+# ── Core (required for all pipeline functionality) ────────────────────────────
+numpy>=1.24,<3.0
+pandas>=1.5,<3.0
+scikit-learn>=1.2,<2.0
+scipy>=1.10,<2.0
+matplotlib>=3.6,<4.0
+seaborn>=0.12,<1.0
+
+# ── System monitoring (strongly recommended, lightweight) ─────────────────────
+psutil>=5.9
+
+# ── Optional: live GEO data download ─────────────────────────────────────────
+# GEOparse>=2.0          # uncomment to enable: python -m ppp_subtypes.main --geo GSE152795
+
+# ── Optional: UMAP visualisation (better than PCA for 2-D plots) ─────────────
+# umap-learn>=0.5        # uncomment to enable UMAP embeddings
