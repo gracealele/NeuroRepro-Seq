@@ -1,22 +1,3 @@
-"""
-ppp_subtypes/modules/reporter.py
-==================================
-Generates a plain-text analysis report summarising the full pipeline run.
-
-The report includes:
-  • Pipeline configuration
-  • Subtype discovery results (optimal k, distribution, per-k metrics)
-  • Top marker genes per subtype (PPP genes starred)
-  • PPP pathway annotations per subtype
-  • Compute profile (runtime + RAM per stage)
-
-Usage
------
-    from ppp_subtypes.modules.reporter import write_report
-    write_report(cfg, subtypes, metrics, optimal_k,
-                 markers, pathway_rep, enrichment,
-                 profile_df, out_dir / "report.txt")
-"""
 
 from __future__ import annotations
 
@@ -25,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from ppp_subtypes.modules.config import PipelineConfig
+from modules.config import PipelineConfig
 
 
 def write_report(
@@ -42,8 +23,7 @@ def write_report(
     """
     Write a structured plain-text report of the pipeline run.
 
-    Parameters
-    ----------
+    Parameters:
     cfg         : PipelineConfig used for this run
     subtypes    : predicted subtype labels (sample → subtype)
     metrics     : per-k metrics dict from select_optimal_k

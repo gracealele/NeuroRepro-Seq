@@ -1,28 +1,3 @@
-"""
-ppp_subtypes/modules/visualisation.py
-========================================
-All visualisation functions for the PPP Subtype Pipeline.
-
-Six plots are produced:
-    plot_consensus_heatmaps  – consensus matrices for each k tested
-    plot_embedding           – 2-D scatter coloured by subtype (+ true labels)
-    plot_marker_heatmap      – expression heatmap of top marker genes
-    plot_k_selection         – AUC, silhouette, stability vs k
-    plot_geneset_scores      – PPP gene-set enrichment heatmap per subtype
-    plot_compute_profile     – runtime and RAM bar charts from profiler
-
-All functions:
-  • write PNG to a provided Path
-  • close the figure immediately to free RAM
-  • are safe to call individually or via the pipeline runner
-
-Usage
------
-    from ppp_subtypes.modules.visualisation import (
-        plot_consensus_heatmaps, plot_embedding, ...
-    )
-    plot_consensus_heatmaps(matrices, optimal_k, out_dir / "consensus.png", cfg)
-"""
 
 from __future__ import annotations
 
@@ -38,8 +13,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from ppp_subtypes.modules.config import PipelineConfig
-from ppp_subtypes.modules.genesets import get_all_ppp_genes
+from modules.config import PipelineConfig
+from modules.genesets import get_all_ppp_genes
 
 # ── Design constants ─────────────────────────────────────────────────────────
 PALETTE = ["#E63946", "#457B9D", "#2A9D8F", "#E9C46A", "#F4A261", "#9B5DE5"]
@@ -58,9 +33,8 @@ def _save(fig: plt.Figure, path: Path, dpi: int) -> None:
     logging.info(f"[Plot] Saved → {path}")
 
 
-# =============================================================================
+
 # CONSENSUS HEATMAPS
-# =============================================================================
 
 def plot_consensus_heatmaps(
     matrices: dict[int, np.ndarray],
@@ -102,9 +76,8 @@ def plot_consensus_heatmaps(
     _save(fig, out, cfg.dpi)
 
 
-# =============================================================================
+
 # 2-D EMBEDDING
-# =============================================================================
 
 def plot_embedding(
     embed: np.ndarray,
@@ -156,9 +129,8 @@ def plot_embedding(
     _save(fig, out, cfg.dpi)
 
 
-# =============================================================================
+
 # MARKER GENE HEATMAP
-# =============================================================================
 
 def plot_marker_heatmap(
     expr: pd.DataFrame,
@@ -230,9 +202,8 @@ def plot_marker_heatmap(
     _save(fig, out, cfg.dpi)
 
 
-# =============================================================================
+
 # K-SELECTION MULTI-CRITERION PLOT
-# =============================================================================
 
 def plot_k_selection(
     metrics: dict,
@@ -283,9 +254,8 @@ def plot_k_selection(
     _save(fig, out, cfg.dpi)
 
 
-# =============================================================================
+
 # GENE SET ENRICHMENT HEATMAP
-# =============================================================================
 
 def plot_geneset_scores(
     enrichment: pd.DataFrame,
@@ -315,9 +285,7 @@ def plot_geneset_scores(
     _save(fig, out, cfg.dpi)
 
 
-# =============================================================================
 # COMPUTE PROFILE
-# =============================================================================
 
 def plot_compute_profile(
     profile_df: pd.DataFrame,

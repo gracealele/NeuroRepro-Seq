@@ -1,32 +1,3 @@
-"""
-ppp_subtypes/modules/dim_reduction.py
-========================================
-HDLSS-aware dimensionality reduction for the PPP pipeline.
- 
-Two functions are exported:
-    hdlss_reduce  – high-dimensional embedding (n_components coords)
-    embed_2d      – 2-D visualisation embedding (UMAP → PCA fallback)
- 
-HDLSS context
--------------
-In the HDLSS regime (High Dimension, Low Sample Size: p >> n),
-the standard sample covariance matrix is rank-deficient and ill-conditioned.
-This breaks ordinary PCA and makes distance-based methods unreliable.
- 
-Two corrections are applied here:
-1. Ledoit-Wolf shrinkage  – regularises the covariance matrix so that
-   all eigenvalues are positive and meaningful before PCA.
-   The shrinkage coefficient α is estimated analytically (no CV needed).
- 
-2. Standard PCA (fast, well-conditioned after shrinkage) or
-   Sparse PCA (higher interpretability, recommended for n > 30).
- 
-Usage
------
-    from ppp_subtypes.modules.dim_reduction import hdlss_reduce, embed_2d
-    coords   = hdlss_reduce(expr, cfg)
-    embed    = embed_2d(coords, cfg)
-"""
  
 from __future__ import annotations
  
@@ -41,9 +12,8 @@ from sklearn.preprocessing import StandardScaler
 from modules.config import PipelineConfig
  
  
-# =============================================================================
 # PRIMARY EMBEDDING
-# =============================================================================
+
 def hdlss_reduce(expr: pd.DataFrame, cfg: PipelineConfig) -> np.array:
     """
     HDLSS-safe dimentionality reduction pipeline:
@@ -136,23 +106,20 @@ def hdlss_reduce(expr: pd.DataFrame, cfg: PipelineConfig) -> np.array:
     coords = StandardScaler().fit_transform(coords)
     return coords
 
-# =============================================================================
 # 2-D VISUALISATION EMBEDDING
-# =============================================================================
 
 def embed_2d(coords: np.array, cfg: PipelineConfig) -> np.array:
-    """Produce a 2-D embedding for visualisation only (not used for clustering).
- 
+    
+    """
+    Produce a 2-D embedding for visualisation only (not used for clustering).
     Tries UMAP first (best quality for small n with non-linear structure),
     falls back to the first two PCA components.
  
-    Parameters
-    ----------
+    Parameters:
     coords : (n_samples, n_components) embedding from hdlss_reduce
     cfg    : PipelineConfig
  
-    Returns
-    -------
+    Returns:
     2-D numpy array of shape (n_samples, 2).
     """
     

@@ -15,168 +15,27 @@ warnings.filterwarnings("ignore")
 # ── Module imports ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 from modules.config             import PipelineConfig, setup_logging
 from modules.profiler           import Profiler
-from modules.data_loader        import load_data
+from modules.data_loader        import generate_synthetic, load_data, load_geo
 from modules.preprocessing      import preprocess
 from modules.dim_reduction      import hdlss_reduce, embed_2d
 from modules.clustering         import (consensus_cluster, select_optimal_k, assign_subtypes)
-from stability.characterisation import (marker_genes_mwu, geneset_enrichment, pathway_report)
-from report.visualisation       import (plot_consensus_heatmaps, plot_embedding, plot_marker_heatmap, plot_k_selection, plot_geneset_scores, plot_compute_profile)
-from report.reporter            import write_report
+from modules.characterisation   import (marker_genes_mwu, geneset_enrichment, pathway_report)
+from modules.visualisation      import (plot_consensus_heatmaps, plot_embedding, plot_marker_heatmap, plot_k_selection, plot_geneset_scores, plot_compute_profile)
+from modules.reporter           import write_report
 
 
 
-# =============================================================================
+
 # PIPELINE RUNNER
-# =============================================================================
-
 
 def run(cfg: PipelineConfig) -> dict:
     """
     Execute the full PPP subtype discovery pipeline.
 
-    Parameters
-    ----------
+    Parameters:
     cfg : PipelineConfig
 
-    Returns
-    -------
-    dict with keys:
-        subtypes    : pd.Series – predicted subtype per sample
-        markers     : pd.DataFrame – marker genes
-        enrichment  : pd.DataFrame – gene-set enrichment scores
-        profile     : pd.DataFrame – compute profile
-        optimal_k   : int
-        metrics     : dict – per-k cluster metrics
-    """
-    
-    # Setup output directory FIRST
-    out_dir = Path(cfg.out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)    
-    
-    # Setup logging
-    setup_logging(out_dir)
-
-    # Reproducibility
-    np.random.seed(cfg.random_seed)
-    
-    # Profiler
-    profiler = Profiler(
-        active=cfg.profile_runtime or getattr(cfg, "profile_memory", False)
-    )
- 
-    # Logging
-    logging.info("=" * 68)
-    logging.info("  PPP Molecular Subtype Pipeline  v2.0")
-    logging.info(f" Output Dir   : {out_dir} ")
-    logging.info(f" Random Seed  : {cfg.random_seed} ")
-    logging.info(f" low Resource : {cfg.low_resource_mode} ")
-    logging.info(f" n_iter       : {cfg.n_iterations}  ")
-    logging.info(f" k_range      : {cfg.k_range} ")
-    logging.info(f"  Profiling   : {profiler.active}")
-    logging.info("=" * 68)
-        
- 
-    # ── 1. Load ──────────────────────────────────────────────────────
-    true_labels = None
-    with profiler("1_data_loading"):
-        if cfg.use_geo:
-            expr_raw = load_geo(cfg.geo_id, cfg.geo_cache_dir)
-        else:
-            expr_raw, true_labels = generate_synthetic(cfg)
- 
-    # ── 2. Preprocess ────────────────────────────────────────────────
-    with profiler("2_preprocessing"):
-        expr = preprocess(expr_raw, cfg)
-        if cfg.save_intermediates:
-            expr.to_csv(out_dir / "preprocessed_expression.csv.gz", compression="gzip")
- 
-    # ── 3. Dim reduction ─────────────────────────────────────────────
-    with profiler("3_dim_reduction"):
-        coords   = hdlss_reduce(expr, cfg)
-        embed_2d_ = embed_2d(coords, cfg)
- 
-    # ── 4. Consensus clustering ──────────────────────────────────────
-    with profiler("4_consensus_clustering"):
-        matrices = consensus_clustering(coords, cfg)
- 
-    # ── 5. Optimal k ─────────────────────────────────────────────────
-    with profiler("5_k_selection"):
-        optimal_k, metrics = select_optimal_k(matrices, coords, cfg)
- 
-    # ── 6. Assign subtypes ───────────────────────────────────────────
-    with profiler("6_subtype_assignment"):
-        subtypes = assign_subtypes(coords, optimal_k, expr.columns)
-        logging.info(f"Subtype distribution:\n{subtypes.value_counts().to_string()}")
- 
-    # ── 7. Characterise ──────────────────────────────────────────────
-    with profiler("7_characterisation"):
-        markers     = marker_genes_mwu(expr, subtypes, top_n=25)
-        enrichment  = geneset_enrichment_score(expr, subtypes)
-        pathway_rep = pathway_report(subtypes, markers)
- 
-    # ── 8. Plot ──────────────────────────────────────────────────────
-    with profiler("8_visualisation"):
-        plot_consensus_heatmaps(matrices, optimal_k,
-                                 out_dir / "consensus_heatmaps.png")
-        plot_embedding(embed_2d_, subtypes, true_labels,
-                       out_dir / "embedding.png")
-        plot_marker_heatmap(expr, subtypes, markers,
-                             out_dir / "marker_heatmap.png")
-        plot_k_selection(metrics, optimal_k,
-                          out_dir / "k_selection.png")
-        plot_geneset_scores(enrichment,
-                             out_dir / "geneset_enrichment.png")
- 
-    # ── 9. Save ──────────────────────────────────────────────────────
-    profile_df = profiler.summary()
-    with profiler("9_saving"):
-        subtypes.to_csv(out_dir / "sample_subtypes.csv", header=True)
-        markers.to_csv(out_dir / "marker_genes.csv", index=False)
-        enrichment.to_csv(out_dir / "geneset_enrichment.csv")
-        profile_df.to_csv(out_dir / "compute_profile.csv", index=False)
-        plot_compute_profile(profile_df, out_dir / "compute_profile.png")
- 
-        if cfg.report:
-            write_report(cfg, subtypes, metrics, optimal_k,
-                         markers, pathway_rep, enrichment,
-                         profile_df, out_dir / "report.txt")
- 
-    logging.info("\n✓  Pipeline complete.")
-    logging.info(f"   Results → {out_dir.resolve()}/")
-    total = profile_df["time_s"].sum()
-    ram   = profile_df["peak_ram_mb"].max()
-    logging.info(f"   Total runtime: {total:.1f}s | Peak RAM: {ram:.1f} MB\n")
-    return subtypes, markers, enrichment
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
-
-
-# =============================================================================
-# PIPELINE RUNNER
-# =============================================================================
-
-def run(cfg: PipelineConfig) -> dict:
-    """
-    Execute the full PPP subtype discovery pipeline.
-
-    Parameters
-    ----------
-    cfg : PipelineConfig
-
-    Returns
-    -------
+    Returns:
     dict with keys:
         subtypes    : pd.Series – predicted subtype per sample
         markers     : pd.DataFrame – marker genes
@@ -298,9 +157,7 @@ def run(cfg: PipelineConfig) -> dict:
     }
 
 
-# =============================================================================
 # CLI
-# =============================================================================
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -354,74 +211,3 @@ if __name__ == "__main__":
         cfg.k_range = list(range(2, args.k_max + 1))
 
     run(cfg)
-
-
-
-# =============================================================================
-# MAIN PIPELINE
-# =============================================================================
-"""
-======================================================================
-HDLSS-Aware Transcriptomic Subtype Discovery for Postpartum Pychosis (PPP)
-======================================================================
-
-Design Goals
-------------
-1.  HDLSS-Aware       - Built for n << p (few sample, may genes).
-                        Uses Ledoit-Wolf shrinkage, Sparse PCA, bootstrap
-                        Stability filtering instead of naive PCA and K-means.
-
-2.  Computationally   - Profiled runtime and RAM at every stage; a "low-resorce
-    efficient           mode" caps memory and parallelism so the pipeline runs
-                        on a standard laptop (<8GB RAM, no GPU)
-
-3.  Small Sample      - Consensus clustering with bootstrap confidence intervals;
-    Size                stability threshold rejects unreliable cluster solutions.
-    
-4.  Low-resource      - TMM-like normalization for sparse/low-coverage counts;
-    sequencing          MAD-based variance filter robust to outlier samples.    
-    
-5.  PPP-Informed      - Literature-grounded gene sets (HPA axis, neuroinflamation
-                        dopaminergic) upweighted in feature selection.
-
-6.  Reproducible      - JSON config, structured logging, version-stamped outputs.
-
-Usage
------
-    python ppp_pipeline.py                          # synthetic data
-    python ppp_pipeline.py --config config.json     # custom config
-    python ppp_pipeline.py --geo GSE152795          # real GEO data
-    
-Requirements (Standard)
-    pip install pandas numpy scikit-learn scipy matplotlib seaborn
-    
-Requirements (Optional (recommended))
-    pip install GEOparse umap-learn
-    
-GEO datasets relevant to PPP/ Perinatal psychosis:
-    GSE152795   - postpatum mood/psychosis transcriptomics
-    GSE116137   - bipolar disorder (first-episode) - closely related
-    GSE181797   - peripheral blood in perinatal psychiatric disorders
-"""
-
-
-"""
-ppp_subtypes/main.py
-====================
-Pipeline runner and CLI entry point for the PPP Subtype Pipeline.
-
-Usage
------
-    # Run with synthetic data (default)
-    python -m ppp_subtypes.main
-    
-    # Run with a custom config file
-    python -m ppp_subtypes.main --config config.json
-    
-    # Run with real GEO data
-    python -m ppp_subtypes.main --geo GSE152795
-    
-    # Combine: config + GEO override
-    python -m ppp_subtypes.main --config config.json --geo GSE152795
-"""
- 

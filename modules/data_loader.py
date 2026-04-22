@@ -1,27 +1,4 @@
-"""
-ppp_subtypes/modules/data_loader.py
-=====================================
-Data loading for the PPP pipeline.
- 
-Two modes
----------
-1. GEO download  – downloads a real GEO series via GEOparse,
-                   caches to disk, returns (genes * samples) DataFrame.
- 
-2. Synthetic     – generates a biologically realistic count matrix
-                   anchored to the PPP gene signatures, in the HDLSS
-                   regime (few samples, many genes) to stress-test the
-                   downstream pipeline.
- 
-Usage
------
-    from ppp_subtypes.modules.data_loader import load_data
-    from ppp_subtypes.modules.config import PipelineConfig
- 
-    cfg  = PipelineConfig()
-    expr, true_labels = load_data(cfg)
-    # true_labels is None when use_geo=True
-"""
+
 
 from __future__ import annotations
 
@@ -41,10 +18,8 @@ from modules.genesets import PPP_GENESETS, get_all_ppp_genes
 
 def load_geo(cfg: PipelineConfig) -> pd.DataFrame:
     """
-    Download a GEO series and return a (genes * samples) expression DataFrame.
- 
-    Results are pickled to cfg.geo_cache_dir so subsequent runs are instant.
- 
+    Download a GEO series and return a (genes * samples) expression DataFrame. 
+    Results are pickled to cfg.geo_cache_dir so subsequent runs are instant. 
     Requires:  pip install GEOparse
  
     Recommended accessions for PPP:
@@ -96,26 +71,24 @@ def load_geo(cfg: PipelineConfig) -> pd.DataFrame:
     return expr
 
 
-# =============================================================================
+
 # SYNTHETIC DATA
-# =============================================================================
+
 def generate_synthetic(
     cfg: PipelineConfig,
     ) -> tuple[pd.DataFrame, pd.Series]:
     """
     Generate a realistic synthetic PPP count matrix for pipeline testing.
  
-    Design principles
-    -----------------
-    • Negative binomial background mimics sparse RNA-seq read counts.
-    • Signal genes drawn from PPP_GENESETS – each subtype has one dominant
+    Design principles:
+    - Negative binomial background mimics sparse RNA-seq read counts.
+    - Signal genes drawn from PPP_GENESETS – each subtype has one dominant
       gene set upregulated with a Poisson signal layer.
-    • Per-sample Gaussian noise simulates technical variability.
-    • HDLSS regime by default (n=40, p=8000) – stresses dim-reduction
+    - Per-sample Gaussian noise simulates technical variability.
+    - HDLSS regime by default (n=40, p=8000) – stresses dim-reduction
       and clustering stability methods.
  
-    Returns
-    -------
+    Returns:
     expr        : DataFrame (genes * samples), integer counts
     true_labels : Series   (sample → true subtype name)
     """
@@ -174,21 +147,20 @@ def generate_synthetic(
 
 
  
-# =============================================================================
 # UNIFIED ENTRY POINT
-# =============================================================================
 
 def load_data(
     cfg: PipelineConfig,
 ) -> tuple[pd.DataFrame, Optional[pd.Series]]:
+    
     """
     Load expression data according to cfg.use_geo.
  
-    Returns
-    -------
+    Returns:
     expr        : DataFrame (genes * samples)
     true_labels : Series or None  (only for synthetic data)
     """
+    
     if cfg.use_geo:
         expr = load_geo(cfg)
         return expr, None

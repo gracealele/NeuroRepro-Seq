@@ -1,18 +1,3 @@
-
-# ================================================
-# CONFIGURATION
-# ================================================
-
-"""
-ppp_subtypes/modules/config.py
-==============================
-Central configuration dataclass for the PPP Subtype Pipeline.
- 
-All pipeline behaviour is controlled from a single PipelineConfig instance.
-Load from a JSON file with PipelineConfig.from_json("config.json"),
-or instantiate directly in Python with keyword overrides.
-"""
- 
  
 from __future__ import annotations
  

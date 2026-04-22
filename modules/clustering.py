@@ -16,7 +16,6 @@ from modules.config import PipelineConfig
  
  
 # HELPERS
-# =============================================================================
 
 def _kmeans(coords: np.ndarray, k: int, seed: int) -> np.ndarray:
     """Single k-means run.  Returns label array."""
@@ -59,9 +58,8 @@ def _vectorised_cooccurrence(
     return co_occur, co_sample
  
  
-# =============================================================================
+
 # CONSENSUS CLUSTERING
-# =============================================================================
  
 def consensus_cluster(
     coords: np.ndarray,
@@ -70,8 +68,7 @@ def consensus_cluster(
     """
     Build consensus matrices for each k in cfg.k_range.
  
-    Algorithm
-    ---------
+    Algorithm:
     For each k:
         1. Repeat cfg.n_iterations times:
            a. Subsample cfg.subsample_rate of samples (without replacement).
@@ -80,13 +77,11 @@ def consensus_cluster(
         2. Consensus[i,j] = co_cluster_count[i,j] / co_sample_count[i,j]
         3. Diagonal = 1.0.
  
-    Small-n adaptation
-    ------------------
+    Small-n adaptation:
     When n < 25, subsample size is capped at n-1 (leave-one-out style)
     to preserve statistical power.
  
-    Returns
-    -------
+    Returns:
     dict: {k: consensus_matrix (n_samples × n_samples, float32)}
     """
     n = coords.shape[0]
@@ -125,20 +120,18 @@ def consensus_cluster(
     return results
  
  
-# =============================================================================
 # BOOTSTRAP STABILITY
-# =============================================================================
  
 def bootstrap_stability(
     coords: np.ndarray,
     k: int,
     cfg: PipelineConfig,
 ) -> float:
+    
     """
     Estimate cluster stability via Jaccard similarity across bootstrap replicates.
  
-    Algorithm
-    ---------
+    Algorithm:
     1. Cluster the full dataset → reference labels.
     2. Resample with replacement cfg.bootstrap_n times.
     3. Cluster each bootstrap sample.
@@ -148,10 +141,10 @@ def bootstrap_stability(
     A value ≥ cfg.stability_threshold (default 0.60) indicates stable clusters.
     Values below threshold suggest that k is too large for the data density.
  
-    Returns
-    -------
+    Returns:
     float in [0, 1]  — higher is more stable
     """
+    
     ref_labels = _kmeans(coords, k, seed=cfg.random_seed)
     jaccard_scores: list[float] = []
  
@@ -183,9 +176,8 @@ def bootstrap_stability(
     return stability
  
  
-# =============================================================================
+ 
 # OPTIMAL K SELECTION
-# =============================================================================
  
 def select_optimal_k(
     consensus_matrices: dict[int, np.ndarray],
@@ -193,22 +185,21 @@ def select_optimal_k(
     cfg: PipelineConfig,
 ) -> tuple[int, dict]:
     """
-    Multi-criterion optimal k selection.
- 
-    Criteria (applied in order)
-    ----------------------------
-    1. Consensus CDF AUC  – measures how bimodal (0 or 1) the consensus
+    Multi-criterion optimal k selection, criteria (applied in order):
+    1. Consensus CDF AUC: measures how bimodal (0 or 1) the consensus
        matrix is.  More bimodal = cleaner clusters.
-    2. ΔAUC               – the elbow: largest improvement from k-1 to k.
-    3. Bootstrap Jaccard  – stability threshold gate: k is disqualified
+       
+    2. Change in AUC: the elbow: largest improvement from k-1 to k.
+    
+    3. Bootstrap Jaccard: stability threshold gate: k is disqualified
        if Jaccard < cfg.stability_threshold.
-    4. Silhouette score   – secondary criterion to break ties.
+    4. Silhouette score:  secondary criterion to break ties.
  
-    Returns
-    -------
+    Returns:
     optimal_k : int
     metrics   : dict {k: {auc, delta_auc, silhouette, stability, labels}}
     """
+    
     metrics: dict[int, dict] = {}
     k_vals  = sorted(consensus_matrices)
     trapfn  = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
@@ -283,21 +274,21 @@ def select_optimal_k(
     return optimal_k, metrics
  
  
-# =============================================================================
 # FINAL SUBTYPE ASSIGNMENT
-# =============================================================================
  
 def assign_subtypes(
     coords: np.ndarray,
     k: int,
     sample_ids: pd.Index,
 ) -> pd.Series:
+    
     """
     Run a final k-means (20 initialisations) on the full coordinate set
     and return a Series of named subtype labels.
  
     Labels are alphabetic: Subtype_A, Subtype_B, etc.
     """
+    
     labels  = _kmeans(coords, k, seed=42)
     named   = [f"Subtype_{chr(65 + l)}" for l in labels]
     return pd.Series(named, index=sample_ids, name="predicted_subtype")
@@ -308,39 +299,3 @@ def assign_subtypes(
 
 
 
-
-Copy
-
-"""
-ppp_subtypes/modules/clustering.py
-====================================
-Consensus clustering with bootstrap stability validation.
- 
-Three public functions:
-    consensus_cluster  – build consensus matrices for k in k_range
-    select_optimal_k   – choose best k via AUC, silhouette, stability
-    assign_subtypes    – final label assignment for the chosen k
- 
-Why consensus clustering?
---------------------------
-Standard k-means is sensitive to initialisation and unstable for small n.
-Consensus clustering runs k-means many times on random subsamples and
-aggregates co-cluster frequencies into a consensus matrix that is stable
-even for n=15–30 samples.
- 
-Why bootstrap stability?
--------------------------
-In HDLSS settings, a cluster solution may look good on the training data
-but fall apart under perturbation.  Bootstrap stability (Jaccard) measures
-how consistently each cluster reappears across bootstrap replicates.
-A k is rejected if its mean Jaccard falls below cfg.stability_threshold.
- 
-Usage
------
-    from ppp_subtypes.modules.clustering import (
-        consensus_cluster, select_optimal_k, assign_subtypes
-    )
-    matrices  = consensus_cluster(coords, cfg)
-    optimal_k, metrics = select_optimal_k(matrices, coords, cfg)
-    subtypes  = assign_subtypes(coords, optimal_k, expr.columns)
-"""

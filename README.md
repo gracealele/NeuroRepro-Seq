@@ -10,10 +10,10 @@ A computationally efficient transcriptomic pipeline for identifying molecular di
 
 Postpartum psychosis affects approximately 1–2 per 1,000 deliveries and remains poorly characterised at the molecular level, partly due to the rarity of the condition and the consequent scarcity of large transcriptomic datasets. This pipeline addresses that challenge directly:
 
-- **HDLSS-aware** — built for the High Dimension, Low Sample Size regime (p >> n, e.g. n=20–80 patients, p=5,000–20,000 genes). Uses Ledoit-Wolf covariance shrinkage and bootstrap stability validation to ensure results are reproducible even at very small n.
-- **Computationally efficient** — full pipeline runs in under 2 minutes on a standard laptop using less than 500 MB RAM. Every stage is profiled for runtime and memory.
-- **Low-resource ready** — TMM normalisation handles sparse, noisy count data from low-coverage sequencing. A low-resource mode caps memory usage and avoids GPU dependencies entirely.
-- **PPP-specific biology** — four literature-curated gene signatures (neuroinflammatory, HPA/hormonal, dopaminergic/synaptic, immune-oxidative) are embedded in the pipeline and used to biologically annotate discovered subtypes.
+- **HDLSS-aware**: Built for the High Dimension, Low Sample Size regime (p >> n, e.g. n=20–80 patients, p=5,000–20,000 genes). Uses Ledoit-Wolf covariance shrinkage and bootstrap stability validation to ensure results are reproducible even at very small n.
+- **Computationally efficient**: full pipeline runs in under 2 minutes on a standard laptop using less than 500 MB RAM. Every stage is profiled for runtime and memory.
+- **Low-resource ready**: TMM normalisation handles sparse, noisy count data from low-coverage sequencing. A low-resource mode caps memory usage and avoids GPU dependencies entirely.
+- **PPP-specific biology**: Four literature-curated gene signatures (neuroinflammatory, HPA/hormonal, dopaminergic/synaptic, immune-oxidative) are embedded in the pipeline and used to biologically annotate discovered subtypes.
 
 ---
 
@@ -87,9 +87,9 @@ Recommended GEO accessions for PPP:
 ```python
 import pandas as pd
 from ppp_subtypes import run, PipelineConfig
-from ppp_subtypes.modules.preprocessing import preprocess
-from ppp_subtypes.modules.dim_reduction import hdlss_reduce, embed_2d
-from ppp_subtypes.modules.clustering import consensus_cluster, select_optimal_k, assign_subtypes
+from modules.preprocessing import preprocess
+from modules.dim_reduction import hdlss_reduce, embed_2d
+from modules.clustering import consensus_cluster, select_optimal_k, assign_subtypes
 
 # Load your expression matrix (genes x samples)
 expr_raw = pd.read_csv("your_expression_data.csv", index_col=0)

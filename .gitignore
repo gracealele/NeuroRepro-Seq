@@ -1,7 +1,3 @@
-# ============================================================
-# .gitignore — Translation Pipeline Project
-# ============================================================
-
 
 # --- Sensitive ---
 .env
@@ -17,8 +13,8 @@ __pycache__/
 
 
 # --- Output / Generated Files ---
-cluster_metrics.csv
-marker_genes.csv
+datasets/cluster_metrics.csv
+datasets/marker_genes.csv
 
 
 # --- Virtual Environments ---

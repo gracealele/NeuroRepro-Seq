@@ -1,21 +1,4 @@
-"""
-modules/genesets.py
--------------------
 
-Literature-curated gene sets and pathway annotations for
-Postpartum Psychosis (PPP) molecular subtype discovery.
-Sources:
-- Bergink et al. (2015) Lancet Psychiatry — neuroinflammation in PPP
-- Deschamps et al. (2016) — HPA axis dysregulation postpartum
-- Payne et al. (2020) — hormonal triggers of perinatal mood disorders
-- Frey et al. (2022) — cytokine profiles in postpartum psychosis
-- Balan et al. (2019) — oxidative stress in perinatal psychiatry
-- Forty et al. (2014) — dopaminergic mechanisms in bipolar/PPP
-
-Each gene set maps to a list of HGNC-standard gene symbols.
-PATHWAY_HINTS maps each set name → list of biological process descriptions
-(used in the text report to annotate subtypes).
-"""
 
 from __future__ import annotations
 
@@ -149,8 +132,7 @@ def geneset_overlap(gene_list: list[str]) -> dict[str, list[str]]:
     Given an arbitrary gene list, return the PPP gene sets it overlaps with
     and the overlapping genes.
  
-    Returns
-    -------
+    Returns:
     dict: {geneset_name: [overlapping_genes]}
     """
     result: dict[str, list[str]] = {}

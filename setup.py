@@ -1,19 +1,3 @@
-"""
-setup.py
-========
-Install the ppp_subtypes package:
-
-    # Editable install (recommended during development)
-    pip install -e .
-
-    # Standard install
-    pip install .
-
-    # With optional extras
-    pip install -e ".[geo]"       # enables GEO download
-    pip install -e ".[umap]"      # enables UMAP visualisation
-    pip install -e ".[full]"      # all optional dependencies
-"""
 
 from setuptools import setup, find_packages
 from pathlib import Path

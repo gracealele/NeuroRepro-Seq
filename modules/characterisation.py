@@ -1,35 +1,3 @@
-"""
-ppp_subtypes/modules/characterisation.py
-==========================================
-Biological characterisation of predicted PPP molecular subtypes.
-
-Three functions:
-    marker_genes_mwu       – identify top marker genes per subtype
-                             using the Mann-Whitney U test + effect size
-    geneset_enrichment     – score each subtype against PPP gene sets
-    pathway_report         – map markers to PPP pathway annotations
-
-Why Mann-Whitney U?
--------------------
-MWU is a non-parametric rank test that makes no assumptions about
-the distribution of expression values.  This is critical for:
-  • Small n (parametric tests have low power and high type-I error)
-  • Non-normal RNA-seq count distributions
-  • Heterogeneous clinical cohorts with variable baseline expression
-
-Effect size is reported as rank-biserial correlation (RBC), which is
-interpretable independently of sample size.
-
-Usage
------
-    from ppp_subtypes.modules.characterisation import (
-        marker_genes_mwu, geneset_enrichment, pathway_report
-    )
-    markers    = marker_genes_mwu(expr, subtypes, cfg)
-    enrichment = geneset_enrichment(expr, subtypes)
-    pathway    = pathway_report(subtypes, markers)
-"""
-
 from __future__ import annotations
 
 import logging
@@ -38,21 +6,20 @@ import numpy as np
 import pandas as pd
 from scipy.stats import mannwhitneyu
 
-from ppp_subtypes.modules.config import PipelineConfig
-from ppp_subtypes.modules.genesets import (
+from modules.config import PipelineConfig
+from modules.genesets import (
     PPP_GENESETS, PATHWAY_HINTS, get_all_ppp_genes
 )
 
 
-# =============================================================================
 # MARKER GENE IDENTIFICATION
-# =============================================================================
 
 def marker_genes_mwu(
     expr: pd.DataFrame,
     subtypes: pd.Series,
     cfg: PipelineConfig,
 ) -> pd.DataFrame:
+    
     """
     One-vs-rest Mann-Whitney U test for every gene × subtype combination.
 
@@ -63,11 +30,11 @@ def marker_genes_mwu(
     Returns the top cfg.marker_top_n genes per subtype, sorted by
     effect size descending, with PPP genes prioritised at ties.
 
-    Output columns
-    --------------
+    Output columns:
     subtype, gene, mwu_stat, p_value, effect_size (RBC),
     mean_in, mean_out, is_ppp_gene
     """
+    
     logging.info(
         "[Char] Mann-Whitney U marker gene identification "
         "(non-parametric, one-vs-rest) …"
@@ -139,9 +106,7 @@ def marker_genes_mwu(
     return top
 
 
-# =============================================================================
 # GENE SET ENRICHMENT SCORING
-# =============================================================================
 
 def geneset_enrichment(
     expr: pd.DataFrame,
@@ -153,8 +118,7 @@ def geneset_enrichment(
     Method: mean z-score of signature genes per subtype (ssGSEA-lite).
     Robust and interpretable without requiring permutation testing.
 
-    Returns
-    -------
+    Returns:
     pivot DataFrame: gene_sets × subtypes  (relative enrichment scores)
     """
     logging.info("[Char] Computing PPP gene-set enrichment scores …")
@@ -191,9 +155,7 @@ def geneset_enrichment(
     return pivot
 
 
-# =============================================================================
 # PATHWAY REPORT
-# =============================================================================
 
 def pathway_report(
     subtypes: pd.Series,
@@ -201,14 +163,12 @@ def pathway_report(
 ) -> dict[str, list[tuple]]:
     """
     Map each subtype's top PPP marker genes to biological pathway annotations.
-
     For each subtype:
       - Extract marker genes that are PPP signature genes.
       - Check which PPP gene sets they belong to.
       - Return the matching sets and their PATHWAY_HINTS descriptions.
 
-    Returns
-    -------
+    Returns:
     dict: {subtype_name: [(geneset_name, [genes], [pathway_hints])]}
     """
     report: dict[str, list[tuple]] = {}

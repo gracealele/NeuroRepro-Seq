@@ -1,34 +1,3 @@
-
-
-Copy
-
-"""
-ppp_subtypes/modules/preprocessing.py
-=======================================
-Preprocessing pipeline for the PPP Subtype Pipeline.
- 
-Three steps, each designed for small-n / low-resource / noisy data:
- 
-1. filter_low_expression
-   Remove genes that are not expressed above a count threshold in at least
-   a minimum fraction of samples.  Reduces matrix size before heavy ops.
- 
-2. tmm_normalise
-   TMM-inspired normalisation for sparse, low-coverage RNA-seq.
-   Scales each sample relative to a reference using trimmed log-ratios,
-   producing log2-CPM values.  Robust to outlier genes.
- 
-3. mad_variance_filter
-   Select top-variance genes by Median Absolute Deviation (MAD).
-   MAD is more robust than standard deviation in small-n settings.
-   PPP signature genes receive an optional score bonus to ensure
-   biologically relevant features are retained.
- 
-Usage
------
-    from ppp_subtypes.modules.preprocessing import preprocess
-    expr_filtered = preprocess(expr_raw, cfg)
-"""
  
 from __future__ import annotations
  
@@ -42,9 +11,8 @@ from modules.config import PipelineConfig
 from modules.genesets import get_all_ppp_genes
  
  
-# =============================================================================
+
 # STEP 1 – Low-expression filter
-# =============================================================================
 
 def  filter_low_expression(
     expr: pd.DataFrame, 
@@ -55,20 +23,18 @@ def  filter_low_expression(
     Remove genes that fail to reach min_count in at least
     (min_frac * n_samples) samples.
  
-    Parameters
-    ----------
+    Parameters:
     expr      : genes * samples raw count DataFrame
     min_count : minimum count to consider a gene "expressed"
     min_frac  : fraction of samples that must exceed min_count
  
-    Returns
-    -------
+    Returns:
     Filtered DataFrame.
     """    
     n_samples = expr.shape[1]
     min_samples = max(1, int(min_frac * n_samples))
     expressed = (expr >= min_count).sum(axis=1) >= min_samples
-    filtered = expr.loc[mask]
+    filtered = expr.loc[expressed]
     logging.info(
         f"[Pre] Low-expression filter: {expr.shape[0]} to {filtered.shape[0]} genes"
         f" (min count={min_count} in ≥{min_frac:.0%} of samples)"
@@ -76,16 +42,14 @@ def  filter_low_expression(
     return expr, filtered
 
 
-# =============================================================================
+
 # STEP 2 – Normalisation
-# =============================================================================
 
 def tmm_normalise(expr: pd.DataFrame) -> pd.DataFrame:
     """
     Lightweight TMM-inspired normalisation for low-coverage RNA-seq.
  
-    Algorithm
-    ---------
+    Algorithm:
     1. Identify a reference sample (closest to mean library size).
     2. For each sample, compute log2-ratios vs the reference.
     3. Trim the top and bottom 30 % of ratios (removes housekeeping
@@ -141,10 +105,7 @@ def quantile_normalise(expr: pd.DataFrame, cfg: PipelineConfig) -> pd.DataFrame:
     return result
 
 
-
-# =============================================================================
 # STEP 3 – Variance filter (MAD)
-# =============================================================================
 
 def mad_variance_filter(
     expr: pd.DataFrame, 
@@ -161,14 +122,12 @@ def mad_variance_filter(
     variance filter to retain technically noisy rather than biologically
     variable genes.  MAD avoids this.
  
-    PPP upweighting
-    ---------------
+    PPP upweighting:
     PPP signature genes receive a score bonus proportional to the maximum
     observed MAD * (ppp_weight - 1).  This ensures that biologically
     relevant features are retained even if their raw MAD is modest.
  
-    Parameters
-    ----------
+    Parameters:
     expr       : normalised genes * samples DataFrame
     top_n      : number of genes to keep
     ppp_genes  : list of PPP signature gene symbols
@@ -199,9 +158,7 @@ def mad_variance_filter(
     return filtered
               
 
-# =============================================================================
 # MAIN ENTRY POINT
-# =============================================================================
 
 def preprocess(expr_raw: pd.DataFrame, cfg:PipelineConfig) -> pd.DataFrame:        
     
@@ -211,13 +168,11 @@ def preprocess(expr_raw: pd.DataFrame, cfg:PipelineConfig) -> pd.DataFrame:
         2. Normalisation (TMM or quantile)
         3. MAD variance filter with PPP gene upweighting
  
-    Parameters
-    ----------
+    Parameters:
     expr_raw : raw count (or expression) matrix, genes × samples
     cfg      : PipelineConfig
  
-    Returns
-    -------
+    Returns:
     Preprocessed and filtered expression matrix.
     """
     logging.info(
@@ -249,4 +204,3 @@ def preprocess(expr_raw: pd.DataFrame, cfg:PipelineConfig) -> pd.DataFrame:
     logging.info(
         f"[Pre] Final matrix: {expr.shape[0]} genes * {expr.shape[1]} samples")
     return expr  
-

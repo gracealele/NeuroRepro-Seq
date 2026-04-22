@@ -1,21 +1,4 @@
-"""
-ppp_subtypes/modules/profiler.py
-================================
-Lightweight context-manager profiler tracking:
-  • wall-clock time per pipeline stage
-  • peak RAM per stage (via tracemalloc)
- 
-Usage
------
-    from ppp_subtypes.modules.profiler import Profiler
- 
-    prof = Profiler()
-    with prof("preprocessing"):
-        ...   # code to time
- 
-    df = prof.summary()   # pandas DataFrame
-    prof.save(out_dir)    # saves CSV + bar chart
-"""
+
 
 from __future__ import annotations
 
@@ -29,14 +12,12 @@ from typing import Optional
 
 import matplotlib
 matplotlib.use("Agg")
+
 import matplotlib.pyplot as plt
 import pandas as pd
 
 
-# ===============================================================
 # PROFILE DECORATOR
-# ===============================================================
-
 class Profiler:
     """
     Context-manager profiler.  Each named block is timed and its peak
@@ -50,7 +31,7 @@ class Profiler:
         self._log: list[dict] = []
         
     def __call__(self, stage: str) -> "_Stage":
-        return _Stage(self, stage)
+        return self._Stage(self, stage)
     
     def summary(self) -> pd.DataFrame:
         """Return all recorded stages as a DataFrame."""
@@ -127,3 +108,5 @@ class Profiler:
     
     def summmary(self) -> pd.DataFrame:
         return pd.DataFrame(self._log)
+    
+    
