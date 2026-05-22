@@ -49,18 +49,18 @@ from ppp_subtypes import run, PipelineConfig
 
 cfg = PipelineConfig(
     synthetic_n_samples = 40,    # number of patient samples
-    k_range             = [2, 3, 4, 5],
-    n_iterations        = 100,
-    low_resource_mode   = True,
+    k_range = [2, 3, 4, 5],
+    n_iterations = 100,
+    low_resource_mode = True,
 )
 results = run(cfg)
 
 # Results dictionary contains:
-#   results["subtypes"]   – pd.Series: predicted subtype per sample
-#   results["markers"]    – pd.DataFrame: top marker genes per subtype
+#   results["subtypes"] – pd.Series: predicted subtype per sample
+#   results["markers"] – pd.DataFrame: top marker genes per subtype
 #   results["enrichment"] – pd.DataFrame: PPP gene-set scores per subtype
-#   results["optimal_k"]  – int: chosen number of subtypes
-#   results["profile"]    – pd.DataFrame: runtime + RAM per stage
+#   results["optimal_k"] – int: chosen number of subtypes
+#   results["profile"] – pd.DataFrame: runtime + RAM per stage
 ```
 
 ### Using real GEO data
@@ -68,7 +68,7 @@ results = run(cfg)
 ```python
 cfg = PipelineConfig(
     use_geo = True,
-    geo_id  = "GSE152795",   # postpartum mood/psychosis transcriptomics
+    geo_id = "GSE152795",   # postpartum mood/psychosis transcriptomics
 )
 results = run(cfg)
 ```
@@ -94,7 +94,7 @@ from modules.clustering import consensus_cluster, select_optimal_k, assign_subty
 # Load your expression matrix (genes x samples)
 expr_raw = pd.read_csv("your_expression_data.csv", index_col=0)
 
-cfg  = PipelineConfig(out_dir="my_results")
+cfg = PipelineConfig(out_dir="my_results")
 expr = preprocess(expr_raw, cfg)
 # ... continue with remaining pipeline steps
 ```
@@ -124,31 +124,31 @@ All pipeline behaviour is controlled through `PipelineConfig`. Key parameters:
 ```python
 PipelineConfig(
     # Data
-    synthetic_n_samples   = 40,      # number of synthetic patient samples
-    synthetic_n_genes     = 8_000,   # gene pool size
-    synthetic_n_subtypes  = 3,       # true subtypes in synthetic data
+    synthetic_n_samples = 40,    # number of synthetic patient samples
+    synthetic_n_genes = 8_000,   # gene pool size
+    synthetic_n_subtypes = 3,       # true subtypes in synthetic data
 
     # Preprocessing
-    normalisation         = "tmm",   # "tmm" (RNA-seq) or "quantile" (microarray)
-    top_var_genes         = 1_000,   # genes kept after MAD variance filter
-    geneset_weighting     = 2.0,     # PPP gene priority boost in variance filter
+    normalisation = "tmm",       # "tmm" (RNA-seq) or "quantile" (microarray)
+    top_var_genes = 1_000,       # genes kept after MAD variance filter
+    geneset_weighting = 2.0,     # PPP gene priority boost in variance filter
 
     # Dimensionality reduction
-    n_components          = 20,      # PCA components
-    ledoit_wolf_shrinkage = True,    # regularise covariance (critical for HDLSS)
-    low_resource_mode     = True,    # use standard PCA; cap RAM usage
+    n_components = 20,             # PCA components
+    ledoit_wolf_shrinkage = True,  # regularise covariance (critical for HDLSS)
+    low_resource_mode = True,      # use standard PCA; cap RAM usage
 
     # Clustering
-    k_range               = [2, 3, 4, 5],  # cluster numbers to test
-    n_iterations          = 100,            # consensus resampling iterations
-    subsample_rate        = 0.70,           # fraction of samples per iteration
-    bootstrap_n           = 50,             # stability validation replicates
-    stability_threshold   = 0.60,           # minimum Jaccard to accept a k
+    k_range = [2, 3, 4, 5],          # cluster numbers to test
+    n_iterations = 100,              # consensus resampling iterations
+    subsample_rate = 0.70,           # fraction of samples per iteration
+    bootstrap_n = 50,                # stability validation replicates
+    stability_threshold = 0.60,      # minimum Jaccard to accept a k
 
     # Output
-    out_dir               = "ppp_results",
-    write_report          = True,
-    profile_runtime       = True,
+    out_dir = "ppp_results",
+    write_report = True,
+    profile_runtime = True,
 )
 ```
 
@@ -156,9 +156,9 @@ You can also load from JSON:
 
 ```json
 {
-  "data":       { "synthetic_n_samples": 60, "use_geo": false },
+  "data": { "synthetic_n_samples": 60, "use_geo": false },
   "clustering": { "k_range": [2, 3, 4], "n_iterations": 200 },
-  "output":     { "out_dir": "results/run1", "write_report": true }
+  "output": { "out_dir": "results/run1", "write_report": true }
 }
 ```
 
