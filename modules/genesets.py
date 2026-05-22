@@ -1,13 +1,9 @@
-
-
 from __future__ import annotations
 
 PPP_GENESETS: dict[str, list[str]] = {
 
-    # ----- Subtype A: Neuro-inflammatory -------
-    # Refs: Bergink 2015, Frey 2022
-    # Elevated cytokines, microglial activation, blood-brain-barrier distruption
-    
+    # Subtype A: Neuro-inflammatory 
+    # Refs: Bergink 2015, Frey 2022  
     "Neuroinflammatory": [
         # Pro-inflammatory cytokines
         "IL1B", "IL6", "IL8", "IL17A", "IL18", "IL12A", "IL12B", "TNFRSF1A", "IFNG", "IFNA1", "TNF",
@@ -19,13 +15,13 @@ PPP_GENESETS: dict[str, list[str]] = {
         "C1QB", "C3", "C4A", "CFB", "SERPING1", "PTGS2", "HMGB1",
 
         # Microglial markers
-        "AIFI", "TMEM119", "P2PRY12", "CX3CR1", "TREM2",
+        "AIF1", "TMEM119", "P2RY12", "CX3CR1", "TREM2",
 
         # NF-kB pathway
          "NFKB1", "NFKBIA", "RELA", "IKBKB", "TLR4", "MYD88",  "STAT3",
 
         # Oxidative stress
-        "NOX4", "SOD2", "HMOX1", "NRF2",
+        "NOX4", "SOD2", "HMOX1", "NFE2L2",
 
         # BBB distruption
         "MMP9", "MMP2", "OCLN", "CLDN5", "TJP1",
@@ -34,9 +30,8 @@ PPP_GENESETS: dict[str, list[str]] = {
         "CRP", "SAA1", "ORM1", "FGA",
     ],
     
-    # ── HPA Axis / Hormonal dysregulation ───────────────────────────────────
+    # Subtype B: HPA Axis / Hormonal dysregulation 
     # Refs: Deschamps 2016, Payne 2020, Osborne 2017
-    
     "HPA_Hormonal": [
         "ESR1", "ESR2",
         "PRL",  "PRLR",
@@ -48,7 +43,7 @@ PPP_GENESETS: dict[str, list[str]] = {
         "GNRH1","GNRHR", "KISS1",   "KISS1R",
     ],
     
-    # ── Dopaminergic / Synaptic signalling ──────────────────────────────────
+    # Subtype C: Dopaminergic / Synaptic signalling 
     # Refs: Bergink 2011, Forty 2014, Jones 2014
     
     "Dopaminergic_Synaptic": [
@@ -62,7 +57,7 @@ PPP_GENESETS: dict[str, list[str]] = {
         "DISC1","NRG1",  "DTNBP1",
     ],
     
-    # ── Immune-Oxidative stress ──────────────────────────────────────────────
+    # Subtype D: Immune-Oxidative stress 
     # Refs: Dahan 2021, Balan 2019
     "Immune_Oxidative": [
         "GSTP1","GSTM1",
@@ -96,7 +91,7 @@ PATHWAY_HINTS: dict[str, list[str]] = {
     
     "Dopaminergic_Synaptic": [
         "Dopamine receptor dysregulation (DRD2 / DRD4)",
-        "BDNF–TrkB neurotrophic signalling",
+        "BDNF-TrkB neurotrophic signalling",
         "Glutamatergic NMDA receptor function (GRIN1 / GRIN2B)",
         "Serotonin reuptake and receptor binding (SLC6A4 / HTR2A)",
         "Dopamine synthesis and catabolism (TH / COMT / MAOA)",
@@ -129,9 +124,7 @@ def gene_to_genesets(gene: str) -> list[str]:
 
 def geneset_overlap(gene_list: list[str]) -> dict[str, list[str]]:
     """
-    Given an arbitrary gene list, return the PPP gene sets it overlaps with
-    and the overlapping genes.
- 
+    Given an arbitrary gene list, return the PPP gene sets it overlaps with and the overlapping genes.
     Returns:
     dict: {geneset_name: [overlapping_genes]}
     """

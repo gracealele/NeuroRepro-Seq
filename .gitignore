@@ -1,35 +1,34 @@
-
-# --- Sensitive ---
+# Sensitive
 .env
 *.key
 *.pem
 
 
-# --- Python Cache ---
+# Python Cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
 
-# --- Output / Generated Files ---
+# Output / Generated Files
 datasets/cluster_metrics.csv
 datasets/marker_genes.csv
 
 
-# --- Virtual Environments ---
+# Virtual Environments
 .env/
 venv/
 env/
 .venv/
 
 
-# --- IDE ---
+# IDE
 .vscode/
 .idea/
 *.egg-info/
 
 
-# --- OS Clutter ---
+# OS Clutter
 .DS_Store
 Thumbs.db

@@ -1,0 +1,134 @@
+====================================================================
+  PPP Molecular Subtype Pipeline v2.0  –  Analysis Report
+====================================================================
+
+CONFIGURATION
+ Data mode : Synthetic
+ Samples (n) : 40
+ Normalization : TMM
+ Variance filter : MAD (top 1000 genes)
+ Dim. reduction : sparse_pca (Ledoit-Wolf)
+ Components : 20
+ Clustering : Consensus k-means (100 iters, sub-rate=70%)
+sub-rate=70%)
+ Bootstrap stability: Yes  (Jaccard ≥ 0.6)
+ PPP gene sets : Yes  (weight=2.0)
+ Low-resource mode : True
+
+SUBTYPE DISCOVERY
+  Optimal k = 3
+
+  Per-k metrics:
+    k=2  AUC=0.3442  ΔAUC=0.0000  Sil=0.103  Stab=0.454 ✗
+    k=3  AUC=0.5292  ΔAUC=0.1851  Sil=0.063  Stab=0.352 ✗
+    k=4  AUC=0.6253  ΔAUC=0.0960  Sil=-0.007  Stab=0.298 ✗
+    k=5  AUC=0.6875  ΔAUC=0.0623  Sil=0.022  Stab=0.322 ✗
+
+SUBTYPE DISTRIBUTION
+  Subtype_A             22 samples  (55.0%)
+  Subtype_B             14 samples  (35.0%)
+  Subtype_C              4 samples  (10.0%)
+
+TOP MARKER GENES  (MWU · rank-biserial effect size)
+  ★ = PPP literature gene
+
+  Subtype_A:
+    HSD11B1      ★  ES=0.505  log2FC=-2.40
+    PDCD1        ★  ES=0.444  log2FC=-0.27
+    CRH          ★  ES=0.409  log2FC=-1.15
+    CD4          ★  ES=0.404  log2FC=-1.02
+    NR3C1        ★  ES=0.379  log2FC=-1.94
+    PRL          ★  ES=0.343  log2FC=-1.50
+    ESR2         ★  ES=0.338  log2FC=-1.30
+    KISS1R       ★  ES=0.303  log2FC=-1.29
+    CTLA4        ★  ES=0.283  log2FC=-0.85
+    GSTM1        ★  ES=0.283  log2FC=-0.70
+
+  Subtype_B:
+    IL1B         ★  ES=0.478  log2FC=-1.72
+    TNF          ★  ES=0.462  log2FC=-1.87
+    PTGS2        ★  ES=0.437  log2FC=-2.05
+    AIF1         ★  ES=0.426  log2FC=-1.93
+    SAA1         ★  ES=0.418  log2FC=-2.58
+    IKBKB        ★  ES=0.418  log2FC=-2.01
+    CCL2         ★  ES=0.404  log2FC=-2.06
+    CXCL8        ★  ES=0.396  log2FC=-2.22
+    STAT3        ★  ES=0.396  log2FC=-2.30
+    IL17A        ★  ES=0.396  log2FC=-1.64
+
+  Subtype_C:
+    HLA-DRA      ★  ES=0.882  log2FC=-5.00
+    SOD1         ★  ES=0.583  log2FC=-1.10
+    PDCD1        ★  ES=0.556  log2FC=-2.08
+    NFE2L2       ★  ES=0.333  log2FC=-2.15
+    NFKBIA       ★  ES=0.319  log2FC=-0.94
+    MPO          ★  ES=0.319  log2FC=-1.43
+    ESR2         ★  ES=0.306  log2FC=-0.78
+    CX3CR1       ★  ES=0.271  log2FC=-1.83
+    CCL3         ★  ES=0.271  log2FC=-1.83
+    TREM2        ★  ES=0.250  log2FC=-0.57
+
+PPP PATHWAY ANNOTATIONS
+
+  Subtype_A:
+    [HPA_Hormonal]  overlapping genes: HSD11B1, CRH, NR3C1, PRL, ESR2, KISS1R
+      → HPA axis hyperactivation (CRH → cortisol)
+      → Oestrogen receptor signalling (ESR1 / ESR2)
+      → Prolactin / prolactin receptor pathway
+    [Dopaminergic_Synaptic]  overlapping genes: DISC1, COMT, MAOA
+      → Dopamine receptor dysregulation (DRD2 / DRD4)
+      → BDNF-TrkB neurotrophic signalling
+      → Glutamatergic NMDA receptor function (GRIN1 / GRIN2B)
+    [Immune_Oxidative]  overlapping genes: PDCD1, CD4, CTLA4, GSTM1, FOXP3
+      → Oxidative stress and antioxidant defence (SOD / CAT / GPX1)
+      → NRF2-mediated stress response
+      → T-cell regulatory dysfunction (FOXP3 / CTLA4 / PDCD1)
+
+  Subtype_B:
+    [Neuroinflammatory]  overlapping genes: IL1B, TNF, PTGS2, AIF1, SAA1, IKBKB
+      → Pro-inflammatory cytokine signalling (IL-1β / IL-6 / TNF-α)
+      → NF-κB pathway activation
+      → Complement system dysregulation (C3 / C4)
+    [Immune_Oxidative]  overlapping genes: NFE2L2, CD8A
+      → Oxidative stress and antioxidant defence (SOD / CAT / GPX1)
+      → NRF2-mediated stress response
+      → T-cell regulatory dysfunction (FOXP3 / CTLA4 / PDCD1)
+
+  Subtype_C:
+    [Neuroinflammatory]  overlapping genes: NFE2L2, NFKBIA, CX3CR1, CCL3, TREM2, IFNA1
+      → Pro-inflammatory cytokine signalling (IL-1β / IL-6 / TNF-α)
+      → NF-κB pathway activation
+      → Complement system dysregulation (C3 / C4)
+    [HPA_Hormonal]  overlapping genes: ESR2, PRLR, OXTR, HSD11B2, KISS1, NR3C1
+      → HPA axis hyperactivation (CRH → cortisol)
+      → Oestrogen receptor signalling (ESR1 / ESR2)
+      → Prolactin / prolactin receptor pathway
+    [Immune_Oxidative]  overlapping genes: HLA-DRA, SOD1, PDCD1, NFE2L2, MPO, SOD2
+      → Oxidative stress and antioxidant defence (SOD / CAT / GPX1)
+      → NRF2-mediated stress response
+      → T-cell regulatory dysfunction (FOXP3 / CTLA4 / PDCD1)
+
+GENE SET ENRICHMENT SCORES  (mean z-score per subtype)
+       Subtype_A       Subtype_B       Subtype_C
+  Dopaminergic_Synaptic                 -0.051           0.005           0.260
+  HPA_Hormonal                          -0.186           0.317          -0.090
+  Immune_Oxidative                       0.008           0.011          -0.084
+  Neuroinflammatory                      0.230          -0.333          -0.101
+
+COMPUTE PROFILE
+  1_data_loading                             0.16s      8.2 MB
+  2_preprocessing                            0.93s     14.8 MB
+  3_dim_reduction                           90.58s     82.2 MB
+  4_consensus_clustering                    12.78s      0.3 MB
+  5_k_selection                              7.56s      0.2 MB
+  6_subtype_assignment                       0.03s      0.0 MB
+  7_characterisation                        14.59s      2.5 MB
+  8_visualisation                            9.67s     12.3 MB
+
+  Total runtime  : 136.3s
+  Peak RAM usage : 82 MB
+
+NOTE: Designed for low-resource clinical environments.
+      PPP gene signatures sourced from published literature.
+      This is a discovery pipeline; results require clinical validation.
+====================================================================

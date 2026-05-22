@@ -1,42 +1,28 @@
- 
-from __future__ import annotations
- 
+from __future__ import annotations 
 import logging
- 
 import numpy as np
 import pandas as pd
 from sklearn.covariance import LedoitWolf
 from sklearn.decomposition import PCA, SparsePCA, IncrementalPCA
 from sklearn.preprocessing import StandardScaler
- 
 from modules.config import PipelineConfig
- 
- 
+
+
 # PRIMARY EMBEDDING
 
 def hdlss_reduce(expr: pd.DataFrame, cfg: PipelineConfig) -> np.array:
     """
-    HDLSS-safe dimentionality reduction pipeline:
-
+    HDLSS-safe dimentionality reduction:
     Step 1: Ledoit-wolf shrinkage on the covariance matrix.
         In p >> n settings, the sample covariance is ill-conditioned.
         Ledoit-wolf provides a well-conditioned regularised estimate.
 
     Step 2: Sparse PCA (or standard PCA in low-resource mode).
-        • low_resource_mode=True  → standard PCA  (fast, ≤ 200 MB RAM)
-        • low_resource_mode=False → SparsePCA     (sparse, interpretable)
+        - low_resource_mode=True to standard PCA (fast, <= 200 MB RAM)
+        - low_resource_mode=False to SparsePCA (sparse, interpretable)
 
     Step 3: Z-score standardise the final embedding so all components
         have unit variance before clustering.
-    
-    Parameters
-    ----------
-    expr : preprocessed genes × samples DataFrame
-    cfg  : PipelineConfig
- 
-    Returns
-    -------
-    coords : (n_samples, n_components) numpy array
     """
     
     # samples × genes
@@ -61,14 +47,14 @@ def hdlss_reduce(expr: pd.DataFrame, cfg: PipelineConfig) -> np.array:
         X = pca_pre.fit_transform(X)
         cum_var = pca_pre.explained_variance_ratio_.sum()
         logging.info(
-            f"[Dim]Pre_PCA: {n_pre} components, " 
+            f"[Dim] Pre_PCA: {n_pre} components, " 
             f"{cum_var:.1%} variance retained"
             )
 
     # Step 2: Sparse PCA for interpretable regularised components
     n_comp = min(cfg.n_components, X.shape[1] -1, n-1)
     
-    if cfg.method == "sparse_pca" and not cfg.low_resoure_mode:
+    if cfg.method == "sparse_pca" and not cfg.low_resource_mode:
         logging.info(f"[Dim] Sparse PCA to {n_comp} components ...")
         
         # alpha controls sparsity regularisation; higher = more zero loadings
@@ -95,11 +81,11 @@ def hdlss_reduce(expr: pd.DataFrame, cfg: PipelineConfig) -> np.array:
 
     else:
         # Low-resource fallback to standard PCA (fast, minimal RAM) to {n_comp} components ...:
-        logging.info(f"[Dim] Standard PCA (low-resource mode)-> {n_comp} components ...")
+        logging.info(f"[Dim] Standard PCA (low-resource mode) -> {n_comp} components ...")
         pca = PCA(n_components=n_comp, random_state=cfg.random_seed)
         coords = pca.fit_transform(X)
         cum_var = pca.explained_variance_ratio_.cumsum()[-1]
-        logging.info(f"[Dim] Variance explained: {cum_var[-1]:.1%}")
+        logging.info(f"[Dim] Variance explained: {cum_var:.1%}")
 
 
     # Step 3: Z-score standardise the embedding
@@ -144,7 +130,7 @@ def embed_2d(coords: np.array, cfg: PipelineConfig) -> np.array:
     except ImportError:
         
         logging.info(
-            "[Dim] umap-learn not installed – using PCA for 2-D visualisation"
+            "[Dim] umap-learn not installed - using PCA for 2-D visualisation"
         )
         pca = PCA(n_components=2, random_state=cfg.random_seed)
         return pca.fit_transform(coords)

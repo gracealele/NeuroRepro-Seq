@@ -1,10 +1,7 @@
-
 from __future__ import annotations
-
 import logging
 from pathlib import Path
 from typing import Optional
-
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.patches as mpatches
@@ -12,13 +9,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-
 from modules.config import PipelineConfig
 from modules.genesets import get_all_ppp_genes
 
-# ── Design constants ─────────────────────────────────────────────────────────
-PALETTE = ["#E63946", "#457B9D", "#2A9D8F", "#E9C46A", "#F4A261", "#9B5DE5"]
 
+# Design constants 
+PALETTE = ["#E63946", "#457B9D", "#2A9D8F", "#E9C46A", "#F4A261", "#9B5DE5"]
 
 def _subtype_colors(subtypes: pd.Series) -> dict[str, str]:
     return {
@@ -26,16 +22,13 @@ def _subtype_colors(subtypes: pd.Series) -> dict[str, str]:
         for i, s in enumerate(sorted(subtypes.unique()))
     }
 
-
 def _save(fig: plt.Figure, path: Path, dpi: int) -> None:
     fig.savefig(path, dpi=dpi, bbox_inches="tight")
     plt.close(fig)
     logging.info(f"[Plot] Saved → {path}")
 
 
-
 # CONSENSUS HEATMAPS
-
 def plot_consensus_heatmaps(
     matrices: dict[int, np.ndarray],
     optimal_k: int,
@@ -78,7 +71,6 @@ def plot_consensus_heatmaps(
 
 
 # 2-D EMBEDDING
-
 def plot_embedding(
     embed: np.ndarray,
     subtypes: pd.Series,
@@ -129,9 +121,7 @@ def plot_embedding(
     _save(fig, out, cfg.dpi)
 
 
-
 # MARKER GENE HEATMAP
-
 def plot_marker_heatmap(
     expr: pd.DataFrame,
     subtypes: pd.Series,
@@ -254,9 +244,7 @@ def plot_k_selection(
     _save(fig, out, cfg.dpi)
 
 
-
 # GENE SET ENRICHMENT HEATMAP
-
 def plot_geneset_scores(
     enrichment: pd.DataFrame,
     out: Path,
@@ -286,7 +274,6 @@ def plot_geneset_scores(
 
 
 # COMPUTE PROFILE
-
 def plot_compute_profile(
     profile_df: pd.DataFrame,
     out: Path,

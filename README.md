@@ -173,32 +173,25 @@ python -m ppp_subtypes.main --config config.json
 ```
 Raw counts / GEO data
         │
-        ▼
 1. data_loader.py      – load GEO or generate synthetic PPP data
         │
-        ▼
 2. preprocessing.py    – low-expression filter → TMM normalisation
-                         → MAD variance filter (PPP gene priority)
+                         -> MAD variance filter (PPP gene priority)
         │
-        ▼
 3. dim_reduction.py    – Ledoit-Wolf shrinkage → PCA → standardise
                          (embed_2d for visualisation only)
         │
-        ▼
 4. clustering.py       – vectorised consensus clustering (k = 2..5)
-                         → bootstrap Jaccard stability per k
-                         → multi-criterion optimal k selection
+                         -> bootstrap Jaccard stability per k
+                         -> multi-criterion optimal k selection
         │
-        ▼
 5. characterisation.py – Mann-Whitney U marker genes (non-parametric)
-                         → PPP gene-set enrichment scoring
-                         → pathway annotation report
+                         -> PPP gene-set enrichment scoring
+                         -> pathway annotation report
         │
-        ▼
 6. visualisation.py    – consensus heatmaps, embedding, marker heatmap,
                          k-selection plot, enrichment heatmap, profiler chart
         │
-        ▼
 7. reporter.py         – plain-text analysis report (clinical-ready)
 ```
 
@@ -217,30 +210,6 @@ Four literature-grounded gene sets are embedded in `genesets.py`:
 
 ---
 
-## Outputs
-
-After a pipeline run, the output directory contains:
-
-```
-ppp_results/
-├── sample_subtypes.csv          – predicted subtype label per sample
-├── marker_genes.csv             – top MWU marker genes per subtype
-├── geneset_enrichment.csv       – PPP pathway scores per subtype
-├── compute_profile.csv          – runtime + RAM per stage
-├── pipeline_config.json         – full config used for this run
-├── consensus_heatmaps.png       – co-clustering matrices for each k tested
-├── embedding.png                – 2-D sample embedding coloured by subtype
-├── marker_heatmap.png           – expression heatmap of top marker genes
-├── k_selection.png              – AUC, silhouette, stability vs k
-├── geneset_enrichment.png       – PPP pathway enrichment heatmap
-├── compute_profile.png          – runtime + RAM bar charts
-├── profiler_log.csv             – detailed profiler log
-├── profiler_timing.png          – profiler visualisation
-├── report.txt                   – full plain-text analysis report
-└── pipeline.log                 – complete run log
-```
-
----
 
 ## Running Tests
 
@@ -261,40 +230,6 @@ Tests cover all 10 modules independently and include two integration tests:
 
 ---
 
-## Project Structure
-
-```
-ppp_subtypes/
-│
-├── __init__.py                  – public API (run, PipelineConfig, PPP_GENESETS)
-├── main.py                      – pipeline runner + CLI entry point
-│
-├── modules/
-│   ├── __init__.py              – module-level public API
-│   ├── config.py                – PipelineConfig dataclass + JSON I/O
-│   ├── profiler.py              – context-manager runtime/RAM profiler
-│   ├── genesets.py              – PPP literature gene signatures
-│   ├── data_loader.py           – GEO download + synthetic data generation
-│   ├── preprocessing.py         – TMM normalisation, MAD filter
-│   ├── dim_reduction.py         – Ledoit-Wolf + PCA/SparsePCA + UMAP
-│   ├── clustering.py            – vectorised consensus clustering + stability
-│   ├── characterisation.py      – MWU marker genes + gene-set enrichment
-│   ├── visualisation.py         – all 6 plot functions
-│   └── reporter.py              – plain-text analysis report writer
-│
-├── tests/
-│   ├── __init__.py
-│   └── test_pipeline.py         – 62 unit tests (stdlib unittest, no pytest)
-│
-├── database/                    – local data files (not tracked by git)
-│   └── .gitkeep
-│
-├── README.md
-├── requirements.txt
-└── setup.py
-```
-
----
 
 ## Roadmap
 

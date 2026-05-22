@@ -1,6 +1,4 @@
- 
-from __future__ import annotations
- 
+from __future__ import annotations 
 import logging
  
 import numpy as np
@@ -13,23 +11,13 @@ from modules.genesets import get_all_ppp_genes
  
 
 # STEP 1 – Low-expression filter
-
 def  filter_low_expression(
     expr: pd.DataFrame, 
     min_count: int, 
     min_frac: float
     ) -> pd.DataFrame:
     """
-    Remove genes that fail to reach min_count in at least
-    (min_frac * n_samples) samples.
- 
-    Parameters:
-    expr      : genes * samples raw count DataFrame
-    min_count : minimum count to consider a gene "expressed"
-    min_frac  : fraction of samples that must exceed min_count
- 
-    Returns:
-    Filtered DataFrame.
+    Remove genes not expressed above min_count in at least min_frac of samples.
     """    
     n_samples = expr.shape[1]
     min_samples = max(1, int(min_frac * n_samples))
@@ -39,26 +27,15 @@ def  filter_low_expression(
         f"[Pre] Low-expression filter: {expr.shape[0]} to {filtered.shape[0]} genes"
         f" (min count={min_count} in ≥{min_frac:.0%} of samples)"
     )
-    return expr, filtered
-
+    return filtered
 
 
 # STEP 2 – Normalisation
-
 def tmm_normalise(expr: pd.DataFrame) -> pd.DataFrame:
     """
     Lightweight TMM-inspired normalisation for low-coverage RNA-seq.
- 
-    Algorithm:
-    1. Identify a reference sample (closest to mean library size).
-    2. For each sample, compute log2-ratios vs the reference.
-    3. Trim the top and bottom 30 % of ratios (removes housekeeping
-       and highly DE genes) and take the trimmed mean.
-    4. Use 2^(trimmed_mean) as a scaling factor.
-    5. Return log2(CPM + 1).
- 
-    This approach is robust to sparse, outlier-heavy count matrices
-    typical of low-infrastructure clinical sequencing.
+    Reference sample = closest to mean library size.
+    Trim top/bottom 30% of log-ratios, scale, return log2(CPM+1).
     """
     
     lib_sizes = expr.sum(axis=0)
@@ -86,9 +63,7 @@ def tmm_normalise(expr: pd.DataFrame) -> pd.DataFrame:
     cpm = normalised.div(normalised.sum(axis=0), axis=1) * 1e6
     log2_cpm = np.log2(cpm + 1)
     logging.info("[Pre] TMM normalisation → log2(CPM+1)")
-    
-    return np.log2_cpm
-        
+    return log2_cpm
 
  
 def quantile_normalise(expr: pd.DataFrame, cfg: PipelineConfig) -> pd.DataFrame:
@@ -114,24 +89,8 @@ def mad_variance_filter(
     ppp_weight:float,
     ) -> pd.DataFrame:
     """
-    Select the top_n most variable genes by Median Absolute Deviation (MAD).
- 
-    Why MAD instead of variance?
-    MAD is robust to outlier samples — in small-n datasets, a single
-    outlier sample can inflate the variance of many genes, causing the
-    variance filter to retain technically noisy rather than biologically
-    variable genes.  MAD avoids this.
- 
-    PPP upweighting:
-    PPP signature genes receive a score bonus proportional to the maximum
-    observed MAD * (ppp_weight - 1).  This ensures that biologically
-    relevant features are retained even if their raw MAD is modest.
- 
-    Parameters:
-    expr       : normalised genes * samples DataFrame
-    top_n      : number of genes to keep
-    ppp_genes  : list of PPP signature gene symbols
-    ppp_weight : multiplicative boost for PPP genes (e.g. 2.0 = double score)
+    Select top_n genes by MAD. MAD is robust to outlier samples (critical for small n).
+    PPP signature genes receive a score bonus to ensure biological relevance.
     """    
     
     # Median absolute deviation per gene
@@ -167,13 +126,6 @@ def preprocess(expr_raw: pd.DataFrame, cfg:PipelineConfig) -> pd.DataFrame:
         1. Low-expression filter
         2. Normalisation (TMM or quantile)
         3. MAD variance filter with PPP gene upweighting
- 
-    Parameters:
-    expr_raw : raw count (or expression) matrix, genes × samples
-    cfg      : PipelineConfig
- 
-    Returns:
-    Preprocessed and filtered expression matrix.
     """
     logging.info(
         f"[Pre] Input: {expr_raw.shape[0]} genes * {expr_raw.shape[1]} samples"
@@ -187,7 +139,7 @@ def preprocess(expr_raw: pd.DataFrame, cfg:PipelineConfig) -> pd.DataFrame:
     )
     
     # 2. Normalisation
-    if cfg.normalisation == "tmm":
+    if cfg.normalization == "tmm":
         expr = tmm_normalise(expr)
     else:
         expr = quantile_normalise(expr, cfg)

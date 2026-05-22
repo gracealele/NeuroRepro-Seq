@@ -1,0 +1,9 @@
+stage,time_s,peak_ram_mb
+1_data_loading,0.158,8.2
+2_preprocessing,0.929,14.8
+3_dim_reduction,90.575,82.2
+4_consensus_clustering,12.776,0.3
+5_k_selection,7.563,0.2
+6_subtype_assignment,0.03,0.0
+7_characterisation,14.586,2.5
+8_visualisation,9.673,12.3

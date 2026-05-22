@@ -1,34 +1,19 @@
 
 
 from __future__ import annotations
-
 import logging
 from pathlib import Path
 from typing import Optional
- 
 import numpy as np
 import pandas as pd
- 
 from modules.config import PipelineConfig
 from modules.genesets import PPP_GENESETS, get_all_ppp_genes
 
 
 # GEO DOWNLOAD
-
-
 def load_geo(cfg: PipelineConfig) -> pd.DataFrame:
-    """
-    Download a GEO series and return a (genes * samples) expression DataFrame. 
-    Results are pickled to cfg.geo_cache_dir so subsequent runs are instant. 
-    Requires:  pip install GEOparse
- 
-    Recommended accessions for PPP:
-        GSE152795  – postpartum mood / psychosis transcriptomics
-        GSE116137  – bipolar disorder first-episode (related)
-        GSE181797  – peripheral blood in perinatal psychiatric disorders
-        GSE54913   – postpartum depression transcriptomics
-    """    
     
+    # Download a GEO series → (genes × samples) DataFrame. Requires GEOparse.
     try:
         import GEOparse
     except ImportError as exc:
@@ -59,7 +44,6 @@ def load_geo(cfg: PipelineConfig) -> pd.DataFrame:
     if not frames:
         raise ValueError(f"No expression tables found in {cfg.geo_id}")
 
-
     # Extract expression data (assuming it's in the first GSM)
     expr = pd.concat(frames, axis=1).dropna()
     expr.index.name = "gene_id"
@@ -78,19 +62,8 @@ def generate_synthetic(
     cfg: PipelineConfig,
     ) -> tuple[pd.DataFrame, pd.Series]:
     """
-    Generate a realistic synthetic PPP count matrix for pipeline testing.
- 
-    Design principles:
-    - Negative binomial background mimics sparse RNA-seq read counts.
-    - Signal genes drawn from PPP_GENESETS – each subtype has one dominant
-      gene set upregulated with a Poisson signal layer.
-    - Per-sample Gaussian noise simulates technical variability.
-    - HDLSS regime by default (n=40, p=8000) – stresses dim-reduction
-      and clustering stability methods.
- 
-    Returns:
-    expr        : DataFrame (genes * samples), integer counts
-    true_labels : Series   (sample → true subtype name)
+    Realistic synthetic PPP count matrix anchored to PPP gene signatures.
+    HDLSS regime by default (n=40, p=8000).
     """
     
     rng =np.random.default_rng(cfg.random_seed)
@@ -102,7 +75,7 @@ def generate_synthetic(
     background = [f"GENE{i:05d}" for i in range(1, p + 1)]
     gene_names = list(dict.fromkeys(ppp_gene + background))[:p]
 
-    # Sparse negative-binomial background (low-coverage RNA-seq)
+    # Sparse negative-binomial background (mimics low-coverage RNA-seq)
     data = rng.negative_binomial(n=5, p=0.6, size=(p, n)).astype(float)
     
     subtype_names = list(PPP_GENESETS.keys())[:k]
@@ -122,7 +95,7 @@ def generate_synthetic(
                 data[sig_idx, col] += rng.poisson(lam=120, size=len(sig_idx))
                 
             # Per-sample technical noise
-            data[:, col] += np(rng.normal(0, 2, size=p), 0, None)
+            data[:, col] += np.clip(rng.normal(0, 2, size=p), 0, None)
             labels.append(stype)
             col += 1
     
@@ -136,7 +109,7 @@ def generate_synthetic(
     
     logging.info(
         f"[Data] Synthetic: {expr.shape[0]} genes * {expr.shape[1]} samples" 
-        f" | p/n ratio = {expr.shape[0]/n:.of} (HDLSS regime)"
+        f" | p/n ratio = {expr.shape[0]/n:.0f} (HDLSS regime)"
     )
     
     logging.info(
@@ -153,17 +126,8 @@ def load_data(
     cfg: PipelineConfig,
 ) -> tuple[pd.DataFrame, Optional[pd.Series]]:
     
-    """
-    Load expression data according to cfg.use_geo.
- 
-    Returns:
-    expr        : DataFrame (genes * samples)
-    true_labels : Series or None  (only for synthetic data)
-    """
-    
+    """Unified entry point: returns (expr, true_labels). true_labels is None for GEO."""    
     if cfg.use_geo:
-        expr = load_geo(cfg)
-        return expr, None
-    else:
-        return generate_synthetic(cfg)
+        return load_geo(cfg), None
+    return generate_synthetic(cfg)
  

@@ -1,0 +1,302 @@
+Molecular Disease Subtype Discovery Pipeline for Postpartum Psychosis.
+
+Designed for:
+  * Small sample sizes (n = 10-80, HDLSS regime)
+  * Low-resource clinical environments (<=1.5 GB RAM, CPU-only)
+  * PPP-specific biology (literature-curated gene signatures)
+
+
+
+
+# MAIN PIPELINE
+======================================================================
+HDLSS-Aware Transcriptomic Subtype Discovery for Postpartum Pychosis (PPP)
+======================================================================
+
+Design Goals:
+1.  HDLSS-Aware       - Built for n << p (few sample, may genes).
+                        Uses Ledoit-Wolf shrinkage, Sparse PCA, bootstrap
+                        Stability filtering instead of naive PCA and K-means.
+
+2.  Computationally   - Profiled runtime and RAM at every stage; a "low-resorce
+    efficient           mode" caps memory and parallelism so the pipeline runs
+                        on a standard laptop (<8GB RAM, no GPU)
+
+3.  Small Sample      - Consensus clustering with bootstrap confidence intervals;
+    Size                stability threshold rejects unreliable cluster solutions.
+    
+4.  Low-resource      - TMM-like normalization for sparse/low-coverage counts;
+    sequencing          MAD-based variance filter robust to outlier samples.    
+    
+5.  PPP-Informed      - Literature-grounded gene sets (HPA axis, neuroinflamation
+                        dopaminergic) upweighted in feature selection.
+
+6.  Reproducible      - JSON config, structured logging, version-stamped outputs.
+
+Usage:
+    python ppp_pipeline.py                          # synthetic data
+    python ppp_pipeline.py --config config.json     # custom config
+    python ppp_pipeline.py --geo GSE152795          # real GEO data
+    
+Requirements (Standard)
+    pip install pandas numpy scikit-learn scipy matplotlib seaborn
+    
+Requirements (Optional (recommended))
+    pip install GEOparse umap-learn
+    
+GEO datasets relevant to PPP/ Perinatal psychosis:
+    GSE152795   - postpatum mood/psychosis transcriptomics
+    GSE116137   - bipolar disorder (first-episode) - closely related
+    GSE181797   - peripheral blood in perinatal psychiatric disorders
+
+
+
+
+
+Pipeline runner and CLI entry point for the PPP Subtype Pipeline.
+
+Usage:
+    # Run with synthetic data (default)
+    python -m ppp_subtypes.main
+    
+    # Run with a custom config file
+    python -m ppp_subtypes.main --config config.json
+    
+    # Run with real GEO data
+    python -m ppp_subtypes.main --geo GSE152795
+    
+    # Combine: config + GEO override
+    python -m ppp_subtypes.main --config config.json --geo GSE152795
+
+ 
+
+# CONSENSUS
+===========================================================================
+Consensus clustering with bootstrap stability validation.
+ 
+Three public functions:
+    consensus_cluster  – build consensus matrices for k in k_range
+    select_optimal_k   – choose best k via AUC, silhouette, stability
+    assign_subtypes    – final label assignment for the chosen k
+ 
+Why consensus clustering?
+--------------------------
+Standard k-means is sensitive to initialisation and unstable for small n.
+Consensus clustering runs k-means many times on random subsamples and
+aggregates co-cluster frequencies into a consensus matrix that is stable
+even for n=15–30 samples.
+ 
+Why bootstrap stability?
+-------------------------
+In HDLSS settings, a cluster solution may look good on the training data
+but fall apart under perturbation.  Bootstrap stability (Jaccard) measures
+how consistently each cluster reappears across bootstrap replicates.
+A k is rejected if its mean Jaccard falls below cfg.stability_threshold.
+ 
+Usage:
+    from ppp_subtypes.modules.clustering import (
+        consensus_cluster, select_optimal_k, assign_subtypes
+    )
+    matrices  = consensus_cluster(coords, cfg)
+    optimal_k, metrics = select_optimal_k(matrices, coords, cfg)
+    subtypes  = assign_subtypes(coords, optimal_k, expr.columns)
+
+
+
+
+# CONFIGURATION
+# ================================================
+
+Central configuration dataclass for the PPP Subtype Pipeline.
+ 
+All pipeline behaviour is controlled from a single PipelineConfig instance.
+Load from a JSON file with PipelineConfig.from_json("config.json"),
+or instantiate directly in Python with keyword overrides.
+
+
+
+
+# SETUP
+# ================================================Install the ppp_subtypes package:
+
+    # Editable install (recommended during development)
+    pip install -e .
+
+    # Standard install
+    pip install .
+
+    # With optional extras
+    pip install -e ".[geo]"       # enables GEO download
+    pip install -e ".[umap]"      # enables UMAP visualisation
+    pip install -e ".[full]"      # all optional dependencies
+
+
+
+
+
+# PREPROCESSING
+# ================================================Install the ppp_subtypes package:
+Preprocessing pipeline for the PPP Subtype Pipeline.
+ 
+Three steps, each designed for small-n / low-resource / noisy data:
+ 
+1. filter_low_expression
+   Remove genes that are not expressed above a count threshold in at least
+   a minimum fraction of samples.  Reduces matrix size before heavy ops.
+ 
+2. tmm_normalise
+   TMM-inspired normalisation for sparse, low-coverage RNA-seq.
+   Scales each sample relative to a reference using trimmed log-ratios,
+   producing log2-CPM values.  Robust to outlier genes.
+ 
+3. mad_variance_filter
+   Select top-variance genes by Median Absolute Deviation (MAD).
+   MAD is more robust than standard deviation in small-n settings.
+   PPP signature genes receive an optional score bonus to ensure
+   biologically relevant features are retained.
+ 
+Usage:
+    from ppp_subtypes.modules.preprocessing import preprocess
+    expr_filtered = preprocess(expr_raw, cfg)
+
+
+   
+    
+    
+PROFILER
+=====================================================
+Lightweight context-manager profiler tracking:
+  • wall-clock time per pipeline stage
+  • peak RAM per stage (via tracemalloc)
+ 
+Usage:
+    from modules.profiler import Profiler
+ 
+    prof = Profiler()
+    with prof("preprocessing"):
+        ...   # code to time
+ 
+    df = prof.summary()   # pandas DataFrame
+    prof.save(out_dir)    # saves CSV + bar chart
+
+
+
+
+REPORTER
+================================================================
+Generates a plain-text analysis report summarising the full pipeline run.
+
+The report includes:
+  • Pipeline configuration
+  • Subtype discovery results (optimal k, distribution, per-k metrics)
+  • Top marker genes per subtype (PPP genes starred)
+  • PPP pathway annotations per subtype
+  • Compute profile (runtime + RAM per stage)
+
+Usage:
+    from modules.reporter import write_report
+    write_report(cfg, subtypes, metrics, optimal_k,
+                 markers, pathway_rep, enrichment,
+                 profile_df, out_dir / "report.txt")
+
+
+
+
+DATA_LOADER
+=====================================
+Data loading for the PPP pipeline.
+ 
+Two modes:
+1. GEO download: downloads a real GEO series via GEOparse,
+                 caches to disk, returns (genes * samples) DataFrame.
+ 
+2. Synthetic: generates a biologically realistic count matrix
+              anchored to the PPP gene signatures, in the HDLSS
+              regime (few samples, many genes) to stress-test the
+              downstream pipeline.
+ 
+Usage:
+    from modules.data_loader import load_data
+    from modules.config import PipelineConfig
+ 
+    cfg  = PipelineConfig()
+    expr, true_labels = load_data(cfg)
+    # true_labels is None when use_geo=True
+
+
+
+
+DIMENTIONALITY REDUCTION
+==========================================================
+HDLSS-aware dimensionality reduction for the PPP pipeline.
+ 
+Two functions are exported:
+    hdlss_reduce: high-dimensional embedding (n_components coords)
+    embed_2d: 2-D visualisation embedding (UMAP → PCA fallback)
+ 
+HDLSS context:
+In the HDLSS regime (High Dimension, Low Sample Size: p >> n),
+the standard sample covariance matrix is rank-deficient and ill-conditioned.
+This breaks ordinary PCA and makes distance-based methods unreliable.
+ 
+Two corrections are applied here:
+1. Ledoit-Wolf shrinkage  – regularises the covariance matrix so that
+   all eigenvalues are positive and meaningful before PCA.
+   The shrinkage coefficient α is estimated analytically (no CV needed).
+ 
+2. Standard PCA (fast, well-conditioned after shrinkage) or
+   Sparse PCA (higher interpretability, recommended for n > 30).
+ 
+Usage:
+    from modules.dim_reduction import hdlss_reduce, embed_2d
+    coords   = hdlss_reduce(expr, cfg)
+    embed    = embed_2d(coords, cfg)
+
+
+
+
+
+
+GENESETS
+-------------------------------------------------------------
+
+Literature-curated gene sets and pathway annotations for
+Postpartum Psychosis (PPP) molecular subtype discovery.
+Sources:
+- Bergink et al. (2015) Lancet Psychiatry — neuroinflammation in PPP
+- Deschamps et al. (2016) — HPA axis dysregulation postpartum
+- Payne et al. (2020) — hormonal triggers of perinatal mood disorders
+- Frey et al. (2022) — cytokine profiles in postpartum psychosis
+- Balan et al. (2019) — oxidative stress in perinatal psychiatry
+- Forty et al. (2014) — dopaminergic mechanisms in bipolar/PPP
+
+Each gene set maps to a list of HGNC-standard gene symbols.
+PATHWAY_HINTS maps each set name → list of biological process descriptions
+(used in the text report to annotate subtypes).
+
+
+
+
+VISUALISATION
+=============================================================================
+All visualisation functions for the PPP Subtype Pipeline.
+
+Six plots are produced:
+    plot_consensus_heatmaps  – consensus matrices for each k tested
+    plot_embedding           – 2-D scatter coloured by subtype (+ true labels)
+    plot_marker_heatmap      – expression heatmap of top marker genes
+    plot_k_selection         – AUC, silhouette, stability vs k
+    plot_geneset_scores      – PPP gene-set enrichment heatmap per subtype
+    plot_compute_profile     – runtime and RAM bar charts from profiler
+
+All functions:
+  • write PNG to a provided Path
+  • close the figure immediately to free RAM
+  • are safe to call individually or via the pipeline runner
+
+Usage:
+    from ppp_subtypes.modules.visualisation import (
+        plot_consensus_heatmaps, plot_embedding, ...
+    )
+    plot_consensus_heatmaps(matrices, optimal_k, out_dir / "consensus.png", cfg)
+

@@ -1,46 +1,63 @@
-
 from __future__ import annotations
 import json, sys, tempfile, time, unittest
 from pathlib import Path
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from modules.config          import PipelineConfig
-from modules.profiler        import Profiler
-from modules.genesets        import (PPP_GENESETS, PATHWAY_HINTS,
+from modules.config import PipelineConfig
+from modules.profiler import Profiler
+from modules.genesets import (PPP_GENESETS, PATHWAY_HINTS,
     get_all_ppp_genes, gene_to_genesets, geneset_overlap)
 
-from modules.data_loader     import generate_synthetic, load_data
-from modules.preprocessing   import (filter_low_expression,
+from modules.data_loader import generate_synthetic, load_data
+from modules.preprocessing import (filter_low_expression,
     tmm_normalise, mad_variance_filter, preprocess)
 
-from modules.dim_reduction   import hdlss_reduce, embed_2d
-from modules.clustering      import (consensus_cluster,
+from modules.dim_reduction import hdlss_reduce, embed_2d
+from modules.clustering import (consensus_cluster,
     bootstrap_stability, select_optimal_k, assign_subtypes)
 
 from modules.characterisation import (marker_genes_mwu,
     geneset_enrichment, pathway_report)
 
-from modules.visualisation   import (plot_consensus_heatmaps,
+from modules.visualisation import (plot_consensus_heatmaps,
     plot_embedding, plot_marker_heatmap, plot_k_selection,
     plot_geneset_scores, plot_compute_profile)
 
-from modules.reporter        import write_report
-from main                    import run
+from modules.reporter import write_report
+from main import run
 
-# ── Shared fixtures (built once) ─────────────────────────────────────────────
+
+# Shared fixtures (built once)
 def _tiny_cfg(out_dir):
     return PipelineConfig(
-        synthetic_n_samples=24, synthetic_n_genes=500, synthetic_n_subtypes=3,
-        min_count_threshold=2, min_samples_expressed=0.10, normalisation="tmm",
-        top_var_genes=200, n_components=8, ledoit_wolf_shrinkage=True,
-        low_resource_mode=True, k_range=[2,3], n_iterations=20,
-        subsample_rate=0.70, bootstrap_ci=True, bootstrap_n=10,
-        stability_threshold=0.30, use_ppp_genesets=True, geneset_weighting=2.0,
-        profile_runtime=True, marker_top_n=10, out_dir=out_dir,
-        write_report=True, save_intermediates=False, dpi=72)
+        synthetic_n_samples = 24,
+        synthetic_n_genes = 500,
+        synthetic_n_subtypes = 3,
+        min_count_threshold = 2,
+        min_samples_expressed = 0.10,
+        normalization = "tmm",
+        top_var_genes = 200,
+        n_components = 8,
+        ledoit_wolf_shrinkage = True,
+        low_resource_mode = True,
+        k_range = [2,3],
+        n_iterations = 20,
+        subsample_rate = 0.70,
+        bootstrap_ci = True,
+        bootstrap_n = 10,
+        stability_threshold = 0.30,
+        use_ppp_genesets = True,
+        geneset_weighting = 2.0,
+        profile_runtime = True,
+        marker_top_n = 10,
+        out_dir = out_dir,
+        write_report = True,
+        save_intermediate = False,
+        dpi = 72
+    )
 
 _TMPDIR       = tempfile.mkdtemp(prefix="ppp_test_")
 _CFG          = _tiny_cfg(_TMPDIR)
@@ -118,30 +135,24 @@ class TestProfiler(unittest.TestCase):
 
 
 class TestGenesets(unittest.TestCase):
-
     def test_four_sets(self):       
         self.assertEqual(len(PPP_GENESETS), 4)
 
     def test_hints_match(self):     
-        self.assertEqual(set(PATHWAY_HINTS), 
-                         set(PPP_GENESETS)
-                         )
+        self.assertEqual(set(PATHWAY_HINTS), set(PPP_GENESETS))
 
     def test_unique_genes(self):
         g = get_all_ppp_genes()
         self.assertEqual(len(g), len(set(g)))
         
     def test_enough_genes(self):    
-        self.assertGreater(len(
-            get_all_ppp_genes()), 50)
+        self.assertGreater(len(get_all_ppp_genes()), 50)
         
     def test_gene_lookup_known(self):
-        self.assertIn("Neuroinflammatory", 
-                      gene_to_genesets("IL6"))
+        self.assertIn("Neuroinflammatory", gene_to_genesets("IL6"))
         
     def test_gene_lookup_unknown(self): 
-        self.assertEqual(
-            gene_to_genesets("FAKE999"), [])
+        self.assertEqual(gene_to_genesets("FAKE999"), [])
         
     def test_overlap(self):
         r = geneset_overlap(["IL6","ESR1","RANDOM"])
@@ -150,7 +161,20 @@ class TestGenesets(unittest.TestCase):
         
     def test_overlap_empty(self):   
         self.assertEqual(geneset_overlap([]), {})
+    
+    def test_no_invalid_gene_symbols(self):
         
+        # Regression guard: invalid symbols must not appear in any gene set.
+        # Add new entries here whenever a bad symbol is discovered.
+        invalid = {
+            "AIFI": "not a valid HGNC symbol; correct symbol is AIF1",
+            "NRF2": "protein name, not a gene symbol; correct symbol is NFE2L2",
+            "P2PRY12": "misspelled; correct symbol is P2RY12"
+        }
+        all_genes = set(get_all_ppp_genes())
+        for symbol, reason in invalid.items():
+            with self.subTest(symbol=symbol):
+                self.assertNotIn(symbol, all_genes, f"{symbol}: {reason}")
 
 class TestDataLoader(unittest.TestCase):
     def test_shape(self):
@@ -364,21 +388,37 @@ class TestIntegration(unittest.TestCase):
     def test_full_pipeline(self):
         with tempfile.TemporaryDirectory() as d:
             cfg = PipelineConfig(
-                synthetic_n_samples=20, synthetic_n_genes=300,
-                synthetic_n_subtypes=2, top_var_genes=100, n_components=6,
-                k_range=[2,3], n_iterations=15, bootstrap_n=8,
-                stability_threshold=0.20, bootstrap_ci=True,
-                low_resource_mode=True, use_ppp_genesets=True,
-                profile_runtime=True, out_dir=d, write_report=True,
-                save_intermediates=False, dpi=72)
+                synthetic_n_samples=20,
+                synthetic_n_genes=300,
+                synthetic_n_subtypes=2,
+                top_var_genes=100,
+                n_components=6,
+                k_range=[2,3],
+                n_iterations=15,
+                bootstrap_n=8,
+                stability_threshold=0.20,
+                bootstrap_ci=True,
+                low_resource_mode=True,
+                use_ppp_genesets=True,
+                profile_runtime=True,
+                out_dir=d, write_report=True,
+                save_intermediate=False,
+                dpi=72
+            )
             res = run(cfg)
             for k in ("subtypes","markers","enrichment","profile","optimal_k","metrics"):
                 self.assertIn(k, res)
             self.assertEqual(len(res["subtypes"]), cfg.synthetic_n_samples)
             self.assertIn(res["optimal_k"], cfg.k_range)
-            for fname in ["sample_subtypes.csv","marker_genes.csv",
-                          "consensus_heatmaps.png","embedding.png",
-                          "marker_heatmap.png","k_selection.png","report.txt"]:
+            for fname in [
+                "sample_subtypes.csv",
+                "marker_genes.csv",
+                "consensus_heatmaps.png",
+                "embedding.png",
+                "marker_heatmap.png",
+                "k_selection.png",
+                "report.txt"
+            ]:
                 p = Path(d)/fname
                 self.assertTrue(p.exists(), f"Missing: {fname}")
                 self.assertGreater(p.stat().st_size, 0, f"Empty: {fname}")
@@ -387,10 +427,18 @@ class TestIntegration(unittest.TestCase):
     def test_ram_under_500mb(self):
         with tempfile.TemporaryDirectory() as d:
             cfg = PipelineConfig(
-                synthetic_n_samples=20, synthetic_n_genes=300,
-                k_range=[2,3], n_iterations=10, bootstrap_n=5,
-                bootstrap_ci=False, profile_runtime=True, out_dir=d,
-                write_report=False, save_intermediates=False, dpi=72)
+                synthetic_n_samples=20,
+                synthetic_n_genes=300,
+                k_range=[2,3],
+                n_iterations=10,
+                bootstrap_n=5,
+                bootstrap_ci=False,
+                profile_runtime=True,
+                out_dir=d,
+                write_report=False,
+                save_intermediate=False,
+                dpi=72
+            )
             res = run(cfg)
             peak = res["profile"]["peak_ram_mb"].max()
             self.assertLess(peak, 500, f"Peak RAM {peak:.0f} MB > 500 MB")

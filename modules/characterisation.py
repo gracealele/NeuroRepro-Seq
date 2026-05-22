@@ -1,11 +1,28 @@
+"""
+Biological characterisation of predicted PPP molecular subtypes.
+ 
+Three functions:
+    marker_genes_mwu    - identify top marker genes per subtype using the Mann-Whitney U test + effect size
+    geneset_enrichment  - score each subtype against PPP gene sets
+    pathway_report      - map markers to PPP pathway annotations
+ 
+Why Mann-Whitney U?
+MWU is a non-parametric rank test that makes no assumptions about
+the distribution of expression values.  This is critical for:
+  - Small n (parametric tests have low power and high type-I error)
+  - Non-normal RNA-seq count distributions
+  - Heterogeneous clinical cohorts with variable baseline expression
+ 
+Effect size is reported as rank-biserial correlation (RBC), which is
+interpretable independently of sample size.
+"""
+
+
 from __future__ import annotations
-
 import logging
-
 import numpy as np
 import pandas as pd
 from scipy.stats import mannwhitneyu
-
 from modules.config import PipelineConfig
 from modules.genesets import (
     PPP_GENESETS, PATHWAY_HINTS, get_all_ppp_genes
@@ -13,33 +30,18 @@ from modules.genesets import (
 
 
 # MARKER GENE IDENTIFICATION
-
 def marker_genes_mwu(
     expr: pd.DataFrame,
     subtypes: pd.Series,
     cfg: PipelineConfig,
 ) -> pd.DataFrame:
     
-    """
-    One-vs-rest Mann-Whitney U test for every gene × subtype combination.
-
-    For each (gene, subtype) pair:
-      - in-group:  samples in this subtype
-      - out-group: all other samples
-
-    Returns the top cfg.marker_top_n genes per subtype, sorted by
-    effect size descending, with PPP genes prioritised at ties.
-
-    Output columns:
-    subtype, gene, mwu_stat, p_value, effect_size (RBC),
-    mean_in, mean_out, is_ppp_gene
-    """
-    
+    # One-vs-rest Mann-Whitney U test for every gene x subtype combination.
     logging.info(
         "[Char] Mann-Whitney U marker gene identification "
         "(non-parametric, one-vs-rest) …"
     )
-    ppp_set      = set(get_all_ppp_genes())
+    ppp_set = set(get_all_ppp_genes())
     marker_rows: list[dict] = []
 
     for st in sorted(subtypes.unique()):
@@ -74,14 +76,14 @@ def marker_genes_mwu(
             effect_rbc = 1.0 - (2.0 * stat) / (n1 * n2)
 
             marker_rows.append({
-                "subtype":     st,
-                "gene":        gene,
-                "mwu_stat":    float(stat),
-                "p_value":     float(pval),
+                "subtype": st,
+                "gene": gene,
+                "mwu_stat": float(stat),
+                "p_value": float(pval),
                 "effect_size": float(effect_rbc),
-                "mean_in":     float(x_in.mean()),
-                "mean_out":    float(x_out.mean()),
-                "log2fc":      float(x_in.mean() - x_out.mean()),
+                "mean_in": float(x_in.mean()),
+                "mean_out": float(x_out.mean()),
+                "log2fc": float(x_in.mean() - x_out.mean()),
                 "is_ppp_gene": gene in ppp_set,
             })
 
@@ -96,9 +98,9 @@ def marker_genes_mwu(
 
     # Log summary
     for st in sorted(top["subtype"].unique()):
-        st_df   = top[top["subtype"] == st]
+        st_df = top[top["subtype"] == st]
         ppp_cnt = st_df["is_ppp_gene"].sum()
-        top5    = st_df["gene"].head(5).tolist()
+        top5 = st_df["gene"].head(5).tolist()
         logging.info(
             f"  {st}: top genes = {top5}  ({ppp_cnt} PPP genes in top {cfg.marker_top_n})"
         )
@@ -107,20 +109,12 @@ def marker_genes_mwu(
 
 
 # GENE SET ENRICHMENT SCORING
-
 def geneset_enrichment(
     expr: pd.DataFrame,
     subtypes: pd.Series,
 ) -> pd.DataFrame:
-    """
-    Single-sample gene-set enrichment scoring for PPP signatures.
-
-    Method: mean z-score of signature genes per subtype (ssGSEA-lite).
-    Robust and interpretable without requiring permutation testing.
-
-    Returns:
-    pivot DataFrame: gene_sets × subtypes  (relative enrichment scores)
-    """
+    
+    # Single-sample gene-set enrichment scoring for PPP signatures.
     logging.info("[Char] Computing PPP gene-set enrichment scores …")
 
     # Z-score each gene across all samples
@@ -128,8 +122,8 @@ def geneset_enrichment(
 
     rows: list[dict] = []
     for st in sorted(subtypes.unique()):
-        sub_expr  = expr.loc[:, subtypes == st]
-        sub_z     = z_expr.loc[:, subtypes == st]
+        sub_expr = expr.loc[:, subtypes == st]
+        sub_z = z_expr.loc[:, subtypes == st]
 
         for gs_name, gs_genes in PPP_GENESETS.items():
             present = [g for g in gs_genes if g in z_expr.index]
@@ -138,13 +132,13 @@ def geneset_enrichment(
             else:
                 score = np.nan
             rows.append({
-                "subtype":         st,
-                "geneset":         gs_name,
+                "subtype": st,
+                "geneset": gs_name,
                 "enrichment_score": score,
                 "n_genes_matched": len(present),
             })
 
-    df    = pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
     pivot = df.pivot(index="geneset", columns="subtype",
                      values="enrichment_score")
 
@@ -156,26 +150,17 @@ def geneset_enrichment(
 
 
 # PATHWAY REPORT
-
 def pathway_report(
     subtypes: pd.Series,
     markers: pd.DataFrame,
 ) -> dict[str, list[tuple]]:
-    """
-    Map each subtype's top PPP marker genes to biological pathway annotations.
-    For each subtype:
-      - Extract marker genes that are PPP signature genes.
-      - Check which PPP gene sets they belong to.
-      - Return the matching sets and their PATHWAY_HINTS descriptions.
-
-    Returns:
-    dict: {subtype_name: [(geneset_name, [genes], [pathway_hints])]}
-    """
+    
+    # Map each subtype's top PPP marker genes to biological pathway annotations.
     report: dict[str, list[tuple]] = {}
 
     for st in sorted(subtypes.unique()):
         st_markers = markers[markers["subtype"] == st]
-        ppp_hits   = st_markers[st_markers["is_ppp_gene"]]["gene"].tolist()
+        ppp_hits = st_markers[st_markers["is_ppp_gene"]]["gene"].tolist()
 
         matched: list[tuple] = []
         for gs_name, gs_genes in PPP_GENESETS.items():

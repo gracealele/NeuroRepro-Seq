@@ -1,0 +1,56 @@
+14:19:20  ====================================================================
+14:19:20    PPP Molecular Subtype Pipeline  v2.0
+14:19:20    low_resource=True  n_iter=100  k_range=[2, 3, 4, 5]
+14:19:20  ====================================================================
+14:19:20  [Data] Synthetic: 8000 genes * 40 samples | p/n ratio = 200 (HDLSS regime)
+14:19:20  [Data] True subtype distribution: {'Dopaminergic_Synaptic': 14, 'Neuroinflammatory': 13, 'HPA_Hormonal': 13}
+14:19:20  [Pre] Input: 8000 genes * 40 samples
+14:19:21  [Pre] MAD filter to 7905 -> 1000 genes(111 PPP signature genes retained
+14:19:21  [Pre] Final matrix: 1000 genes * 40 samples
+14:19:21  [Dim] HDLSS reduction: 40 samples * 1000 genes(p/n ratio = 25)
+14:19:21  [Dim] Applying Ledoit-wolf covariance shrinkage ...
+14:19:22  [Dim] Ledoit-Wolf shrinkage coefficent:  0.6575
+14:19:22  [Dim] Pre_PCA: 39 components, 100.0% variance retained
+14:19:22  [Dim] Standard PCA (low-resource mode) -> 20 components ...
+14:19:22  [Dim] Variance explained: 65.9%
+14:20:06  [Dim] UMAP 2-D embedding (n_neighbors=15) …
+14:20:52  [Dim] UMAP done
+14:20:52  [CC] k=2  (100 iters, subsample=70%) …
+14:20:56  [CC] k=3  (100 iters, subsample=70%) …
+14:20:59  [CC] k=4  (100 iters, subsample=70%) …
+14:21:01  [CC] k=5  (100 iters, subsample=70%) …
+14:21:05  
+[K] Computing stability metrics …
+14:21:12  [K] No k met stability threshold 0.6. Falling back to best AUC.
+14:21:12  
+[Subtypes] Distribution:
+14:21:12  predicted_subtype
+Subtype_A    22
+Subtype_B    14
+Subtype_C     4
+14:21:12  [Char] Mann-Whitney U marker gene identification (non-parametric, one-vs-rest) …
+14:21:26    Subtype_A: top genes = ['HSD11B1', 'PDCD1', 'CRH', 'CD4', 'NR3C1']  (25 PPP genes in top 25)
+14:21:26    Subtype_B: top genes = ['IL1B', 'TNF', 'PTGS2', 'AIF1', 'SAA1']  (25 PPP genes in top 25)
+14:21:26    Subtype_C: top genes = ['HLA-DRA', 'SOD1', 'PDCD1', 'NFE2L2', 'NFKBIA']  (25 PPP genes in top 25)
+14:21:26  [Char] Computing PPP gene-set enrichment scores …
+14:21:27  [Char] Gene set enrichment: 4 sets × 3 subtypes
+14:21:27    Subtype_A: 3 PPP pathways hit
+14:21:27      [HPA_Hormonal]  HSD11B1, CRH, NR3C1, PRL
+14:21:27      [Dopaminergic_Synaptic]  DISC1, COMT, MAOA
+14:21:27      [Immune_Oxidative]  PDCD1, CD4, CTLA4, GSTM1
+14:21:27    Subtype_B: 2 PPP pathways hit
+14:21:27      [Neuroinflammatory]  IL1B, TNF, PTGS2, AIF1
+14:21:27      [Immune_Oxidative]  NFE2L2, CD8A
+14:21:27    Subtype_C: 3 PPP pathways hit
+14:21:27      [Neuroinflammatory]  NFE2L2, NFKBIA, CX3CR1, CCL3
+14:21:27      [HPA_Hormonal]  ESR2, PRLR, OXTR, HSD11B2
+14:21:27      [Immune_Oxidative]  HLA-DRA, SOD1, PDCD1, NFE2L2
+14:21:38  [Profiler] Total: 136.3s | Peak RAM: 82 MB
+14:21:39  
+====================================================================
+14:21:39       Optimal k : 3
+14:21:39       Total runtime: 136.3s
+14:21:39       Peak RAM : 82 MB
+14:21:39       Results : C:\Users\DELL\Projects\ml_projects\NeuroRepro-Seq\ppp_results/
+14:21:39  ====================================================================
+
